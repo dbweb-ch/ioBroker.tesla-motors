@@ -20,7 +20,8 @@
     "url": "https://github.com/dbweb-ch/iobroker.tesla-motors"
   },
   "dependencies": {
-    "@iobroker/adapter-core": "^1.0.3"
+    "@iobroker/adapter-core": "^1.0.3",
+    "teslajs": "^4.7.0"
   },
   "devDependencies": {
     "@iobroker/testing": "^1.2.6",

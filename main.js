@@ -1,17 +1,9 @@
 'use strict';
 
-/*
- * Created with @iobroker/create-adapter v1.17.0
- */
-
-// The adapter-core module gives you access to the core ioBroker functions
-// you need to create an adapter
 const utils = require('@iobroker/adapter-core');
+const tjs = require('teslajs');
 
-// Load your modules here, e.g.:
-// const fs = require("fs");
-
-class Template extends utils.Adapter {
+class TeslaMotors extends utils.Adapter {
 
     /**
      * @param {Partial<ioBroker.AdapterOptions>} [options={}]
@@ -19,7 +11,7 @@ class Template extends utils.Adapter {
     constructor(options) {
         super({
             ...options,
-            name: 'template',
+            name: 'tesla-motors',
         });
         this.on('ready', this.onReady.bind(this));
         this.on('objectChange', this.onObjectChange.bind(this));
@@ -36,8 +28,8 @@ class Template extends utils.Adapter {
 
         // The adapters config (in the instance object everything under the attribute "native") is accessible via
         // this.config:
-        this.log.info('config option1: ' + this.config.option1);
-        this.log.info('config option2: ' + this.config.option2);
+        this.log.info('config option1: ' + this.config.teslaUsername);
+        this.log.info('config option2: ' + this.config.teslaPassword);
 
         /*
         For every state in the system there has to be also an object of type state

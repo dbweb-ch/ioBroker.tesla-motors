@@ -57,8 +57,8 @@
         ]
     },
     "native": {
-        "option1": true,
-        "option2": "42"
+        "teslaUsername": "",
+        "teslaPassword": ""
     },
     "objects": [],
     "instanceObjects": []
