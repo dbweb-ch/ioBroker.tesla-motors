@@ -240,9 +240,49 @@ class TeslaMotors extends utils.Adapter {
                 Adapter.setState('chargeState.charge_current_request', data.charge_current_request);
             }
         })
+
+        tjs.climateState(options, function (err, data) {
+            if(err){
+                Adapter.log.error('Invalid answer from climateState request. Error: ' + err);
+                return;
+            }
+            Adapter.log.debug('climateState Answer:' + JSON.stringify(data));
+
+            Adapter.setState('climateState.inside_temp', data.inside_temp);
+            Adapter.setState('climateState.outside_temp', data.outside_temp);
+            Adapter.setState('climateState.driver_temp_setting', data.driver_temp_setting);
+            Adapter.setState('climateState.passenger_temp_setting', data.passenger_temp_setting);
+            Adapter.setState('climateState.is_climate_on', data.is_climate_on);
+            if(EXTENDED_STATES){
+                Adapter.setState('climateState.steering_wheel_heater', data.steering_wheel_heater);
+                Adapter.setState('climateState.wiper_blade_heater', data.wiper_blade_heater);
+                Adapter.setState('climateState.side_mirror_heaters', data.side_mirror_heaters);
+                Adapter.setState('climateState.is_preconditioning', data.is_preconditioning);
+                Adapter.setState('climateState.smart_preconditioning', data.smart_preconditioning);
+                Adapter.setState('climateState.is_auto_conditioning_on', data.is_auto_conditioning_on);
+            }
+        })
+
+        tjs.driveState(options, function (err, data) {
+            if(err){
+                Adapter.log.error('Invalid answer from driveState request. Error: ' + err);
+                return;
+            }
+            Adapter.log.debug('driveState Answer:' + JSON.stringify(data));
+
+            Adapter.setState('driveState.shift_state', data.shift_state);
+            Adapter.setState('driveState.speed', data.speed);
+            Adapter.setState('driveState.power', data.power);
+            Adapter.setState('driveState.latitude', data.latitude);
+            Adapter.setState('driveState.longitude', data.longitude);
+            Adapter.setState('driveState.heading', data.heading);
+            Adapter.setState('driveState.gps_as_of', data.gps_as_of);
+        })
     }
 
     initObject(){
+        // type: "number" | "string" | "boolean" | "array" | "object" | "mixed" | "file";
+        // todo: Add Descriptions for States...
         // Vehicle
         this.setObjectNotExists('vehicle.id_s', {
             type: 'state',
@@ -278,27 +318,27 @@ class TeslaMotors extends utils.Adapter {
         })
         this.setObjectNotExists('chargeState.battery_level', {
             type: 'state',
-            common: {name: 'battery_level', type: 'string', role: 'indicator', read: true, write: false}
+            common: {name: 'battery_level', type: 'number', role: 'indicator', read: true, write: false}
         })
         this.setObjectNotExists('chargeState.battery_range', {
             type: 'state',
-            common: {name: 'battery_range', type: 'string', role: 'indicator', read: true, write: false}
+            common: {name: 'battery_range', type: 'number', role: 'indicator', read: true, write: false}
         })
         this.setObjectNotExists('chargeState.est_battery_range', {
             type: 'state',
-            common: {name: 'est_battery_range', type: 'string', role: 'indicator', read: true, write: false}
+            common: {name: 'est_battery_range', type: 'number', role: 'indicator', read: true, write: false}
         })
         this.setObjectNotExists('chargeState.ideal_battery_range', {
             type: 'state',
-            common: {name: 'ideal_battery_range', type: 'string', role: 'indicator', read: true, write: false}
+            common: {name: 'ideal_battery_range', type: 'number', role: 'indicator', read: true, write: false}
         })
         this.setObjectNotExists('chargeState.charge_limit_soc', {
             type: 'state',
-            common: {name: 'charge_limit_soc', type: 'string', role: 'indicator', read: true, write: false}
+            common: {name: 'charge_limit_soc', type: 'number', role: 'indicator', read: true, write: false}
         })
         this.setObjectNotExists('chargeState.charge_port_door_open', {
             type: 'state',
-            common: {name: 'charge_port_door_open', type: 'string', role: 'indicator', read: true, write: false}
+            common: {name: 'charge_port_door_open', type: 'boolean', role: 'indicator', read: true, write: false}
         })
         this.setObjectNotExists('chargeState.scheduled_charging_start_time', {
             type: 'state',
@@ -306,39 +346,117 @@ class TeslaMotors extends utils.Adapter {
         })
         this.setObjectNotExists('chargeState.battery_heater_on', {
             type: 'state',
-            common: {name: 'battery_heater_on', type: 'string', role: 'indicator', read: true, write: false}
+            common: {name: 'battery_heater_on', type: 'boolean', role: 'indicator', read: true, write: false}
         })
 
         if(EXTENDED_STATES){
             this.setObjectNotExists('chargeState.fast_charger_present', {
                 type: 'state',
-                common: {name: 'fast_charger_present', type: 'string', role: 'indicator', read: true, write: false}
+                common: {name: 'fast_charger_present', type: 'boolean', role: 'indicator', read: true, write: false}
             })
             this.setObjectNotExists('chargeState.usable_battery_level', {
                 type: 'state',
-                common: {name: 'usable_battery_level', type: 'string', role: 'indicator', read: true, write: false}
+                common: {name: 'usable_battery_level', type: 'number', role: 'indicator', read: true, write: false}
             })
             this.setObjectNotExists('chargeState.charge_energy_added', {
                 type: 'state',
-                common: {name: 'charge_energy_added', type: 'string', role: 'indicator', read: true, write: false}
+                common: {name: 'charge_energy_added', type: 'number', role: 'indicator', read: true, write: false}
             })
             this.setObjectNotExists('chargeState.charge_miles_added_rated', {
                 type: 'state',
-                common: {name: 'charge_miles_added_rated', type: 'string', role: 'indicator', read: true, write: false}
+                common: {name: 'charge_miles_added_rated', type: 'number', role: 'indicator', read: true, write: false}
             })
             this.setObjectNotExists('chargeState.charger_voltage', {
                 type: 'state',
-                common: {name: 'charger_voltage', type: 'string', role: 'indicator', read: true, write: false}
+                common: {name: 'charger_voltage', type: 'number', role: 'indicator', read: true, write: false}
             })
             this.setObjectNotExists('chargeState.charger_power', {
                 type: 'state',
-                common: {name: 'charger_power', type: 'string', role: 'indicator', read: true, write: false}
+                common: {name: 'charger_power', type: 'number', role: 'indicator', read: true, write: false}
             })
             this.setObjectNotExists('chargeState.charge_current_request', {
                 type: 'state',
-                common: {name: 'charge_current_request', type: 'string', role: 'indicator', read: true, write: false}
+                common: {name: 'charge_current_request', type: 'number', role: 'indicator', read: true, write: false}
             })
         }
+
+        // Climate State
+        this.setObjectNotExists('climateState.inside_temp', {
+            type: 'state',
+            common: {name: 'inside_temp', type: 'number', role: 'indicator', read: true, write: false}
+        })
+        this.setObjectNotExists('climateState.outside_temp', {
+            type: 'state',
+            common: {name: 'outside_temp', type: 'number', role: 'indicator', read: true, write: false}
+        })
+        this.setObjectNotExists('climateState.driver_temp_setting', {
+            type: 'state',
+            common: {name: 'driver_temp_setting', type: 'number', role: 'indicator', read: true, write: false}
+        })
+        this.setObjectNotExists('climateState.passenger_temp_setting', {
+            type: 'state',
+            common: {name: 'passenger_temp_setting', type: 'number', role: 'indicator', read: true, write: false}
+        })
+        this.setObjectNotExists('climateState.is_climate_on', {
+            type: 'state',
+            common: {name: 'is_climate_on', type: 'boolean', role: 'indicator', read: true, write: false}
+        })
+        if(EXTENDED_STATES){
+            this.setObjectNotExists('climateState.steering_wheel_heater', {
+                type: 'state',
+                common: {name: 'steering_wheel_heater', type: 'boolean', role: 'indicator', read: true, write: false}
+            })
+            this.setObjectNotExists('climateState.wiper_blade_heater', {
+                type: 'state',
+                common: {name: 'wiper_blade_heater', type: 'boolean', role: 'indicator', read: true, write: false}
+            })
+            this.setObjectNotExists('climateState.side_mirror_heaters', {
+                type: 'state',
+                common: {name: 'side_mirror_heaters', type: 'boolean', role: 'indicator', read: true, write: false}
+            })
+            this.setObjectNotExists('climateState.is_preconditioning', {
+                type: 'state',
+                common: {name: 'is_preconditioning', type: 'boolean', role: 'indicator', read: true, write: false}
+            })
+            this.setObjectNotExists('climateState.smart_preconditioning', {
+                type: 'state',
+                common: {name: 'smart_preconditioning', type: 'boolean', role: 'indicator', read: true, write: false}
+            })
+            this.setObjectNotExists('climateState.is_auto_conditioning_on', {
+                type: 'state',
+                common: {name: 'is_auto_conditioning_on', type: 'boolean', role: 'indicator', read: true, write: false}
+            })
+        }
+
+        // drive State
+        this.setObjectNotExists('driveState.shift_state', {
+            type: 'state',
+            common: {name: 'shift_state', type: 'string', role: 'indicator', read: true, write: false}
+        })
+        this.setObjectNotExists('driveState.speed', {
+            type: 'state',
+            common: {name: 'speed', type: 'number', role: 'indicator', read: true, write: false}
+        })
+        this.setObjectNotExists('driveState.power', {
+            type: 'state',
+            common: {name: 'power', type: 'number', role: 'indicator', read: true, write: false}
+        })
+        this.setObjectNotExists('driveState.latitude', {
+            type: 'state',
+            common: {name: 'latitude', type: 'number', role: 'indicator', read: true, write: false}
+        })
+        this.setObjectNotExists('driveState.longitude', {
+            type: 'state',
+            common: {name: 'longitude', type: 'number', role: 'indicator', read: true, write: false}
+        })
+        this.setObjectNotExists('driveState.heading', {
+            type: 'state',
+            common: {name: 'heading', type: 'number', role: 'indicator', read: true, write: false}
+        })
+        this.setObjectNotExists('driveState.gps_as_of', {
+            type: 'state',
+            common: {name: 'gps_as_of', type: 'number', role: 'indicator', read: true, write: false}
+        })
     }
 }
 
