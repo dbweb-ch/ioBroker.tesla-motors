@@ -1,22 +1,23 @@
 {
-  "name": "iobroker.template",
+  "name": "iobroker.tesla-motors",
   "version": "0.0.1",
-  "description": "Template for adapter development",
+  "description": "Adapter for Tesla Motors cars",
   "author": {
-    "name": "Author",
-    "email": "author@mail.com"
+    "name": "Dominic Blattmann",
+    "email": "nick@dbweb.ch"
   },
-  "homepage": "https://github.com/Author/ioBroker.template",
+  "homepage": "https://github.com/dbweb-ch/iobroker.tesla-motors",
   "license": "MIT",
   "keywords": [
     "ioBroker",
-    "template",
+    "tesla",
+    "teslamotors",
     "Smart Home",
     "home automation"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/Author/ioBroker.template"
+    "url": "https://github.com/dbweb-ch/iobroker.tesla-motors"
   },
   "dependencies": {
     "@iobroker/adapter-core": "^1.0.3"
@@ -51,7 +52,7 @@
     "lint": "eslint"
   },
   "bugs": {
-    "url": "https://github.com/Author/ioBroker.template/issues"
+    "url": "https://github.com/dbweb-ch/iobroker.tesla-motors/issues"
   },
   "readmeFilename": "README.md"
 }
