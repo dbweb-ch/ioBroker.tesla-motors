@@ -24,53 +24,30 @@ class TeslaMotors extends utils.Adapter {
      * Is called when databases are connected and adapter received configuration.
      */
     async onReady() {
-        // Initialize your adapter here
+        const Adapater = this;
+        this.log.info('Starting Tesla Motors');
+        this.setState('info.connection', false, true);
 
-        // The adapters config (in the instance object everything under the attribute "native") is accessible via
-        // this.config:
-        this.log.info('config option1: ' + this.config.teslaUsername);
-        this.log.info('config option2: ' + this.config.teslaPassword);
-
-        /*
-        For every state in the system there has to be also an object of type state
-        Here a simple template for a boolean variable named "testVariable"
-        Because every adapter instance uses its own unique namespace variable names can't collide with other adapters variables
-        */
-        await this.setObjectAsync('testVariable', {
+        this.setObjectNotExists('authToken', {
             type: 'state',
-            common: {
-                name: 'testVariable',
-                type: 'boolean',
-                role: 'indicator',
-                read: true,
-                write: true,
-            },
-            native: {},
-        });
+            common: {name: 'authToken', type: 'string', role: 'indicator', read: false, write: false}
+        })
+        this.setObjectNotExists('refreshToken', {
+            type: 'state',
+            common: {name: 'refreshToken', type: 'string', role: 'indicator', read: false, write: false}
+        })
+        this.setObjectNotExists('tokenExpire', {
+            type: 'state',
+            common: {name: 'tokenExpire', type: 'string', role: 'indicator', read: false, write: false}
+        })
+        const authToken = await this.getStateAsync('authToken');
+        const tokenExpire = await this.getStateAsync('tokenExpire');
+        var Expires = new Date(tokenExpire.val);
+        Expires.setDate(Expires.getDate() - 10);
 
-        // in this template all states changes inside the adapters namespace are subscribed
-        this.subscribeStates('*');
-
-        /*
-        setState examples
-        you will notice that each setState will cause the stateChange event to fire (because of above subscribeStates cmd)
-        */
-        // the variable testVariable is set to true as command (ack=false)
-        await this.setStateAsync('testVariable', true);
-
-        // same thing, but the value is flagged "ack"
-        // ack should be always set to true if the value is received from or acknowledged from the target system
-        await this.setStateAsync('testVariable', { val: true, ack: true });
-
-        // same thing, but the state is deleted after 30s (getState will return null afterwards)
-        await this.setStateAsync('testVariable', { val: true, ack: true, expire: 30 });
-
-        // examples for the checkPassword/checkGroup functions
-        let result = await this.checkPasswordAsync('admin', 'iobroker');
-        this.log.info('check user admin pw ioboker: ' + result);
-
-        result = await this.checkGroupAsync('admin', 'admin');
-        this.log.info('check group user admin group admin: ' + result);
+        if(authToken.val.length == 0 || Expires < new Date()){
+            this.GetNewToken(Adapter);
+        }
     }
 
     /**
@@ -116,22 +93,25 @@ class TeslaMotors extends utils.Adapter {
         }
     }
 
-    // /**
-    //  * Some message was sent to this instance over message box. Used by email, pushover, text2speech, ...
-    //  * Using this method requires "common.message" property to be set to true in io-package.json
-    //  * @param {ioBroker.Message} obj
-    //  */
-    // onMessage(obj) {
-    // 	if (typeof obj === 'object' && obj.message) {
-    // 		if (obj.command === 'send') {
-    // 			// e.g. send email or pushover or whatever
-    // 			this.log.info('send command');
-
-    // 			// Send response in callback if required
-    // 			if (obj.callback) this.sendTo(obj.from, obj.command, 'Message received', obj.callback);
-    // 		}
-    // 	}
-    // }
+    GetNewToken(){
+        const Adapter = this;
+        // No token, we try to get a token
+        Adapater.log.info('Try to get a new token');
+        tjs.login(Adapater.config.teslaUsername, Adapater.config.teslaPassword, function(err, result) {
+            if(result.error || !result.authToken){
+                Adapater.log.error('Could not get token, stopping Adapter. error: ' + JSON.stringify(result.error));
+                this.setForeignState("system.adapter." + this.namespace + ".alive", false);
+                return;
+            }
+            Adapater.log.info('Recieved a new Token');
+            Adapater.setState('authToken', result.authToken);
+            Adapater.setState('refreshToken', result.refreshToken);
+            var ExpireDate = new Date();
+            ExpireDate.setSeconds(ExpireDate.getSeconds() + result.body.expires_in);
+            Adapater.setState('tokenExpire', ExpireDate);
+            Adapater.setState('info.connection', true, true);
+        });
+    }
 
 }
 
@@ -144,5 +124,5 @@ if (module.parent) {
     module.exports = (options) => new Template(options);
 } else {
     // otherwise start the instance directly
-    new Template();
+    new TeslaMotors();
 }

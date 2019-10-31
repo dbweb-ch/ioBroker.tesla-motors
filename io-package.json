@@ -31,10 +31,13 @@
         "platform": "Javascript/Node.js",
         "main": "main.js",
         "icon": "tesla-motors.png",
-        "enabled": true,
+        "enabled": false,
         "extIcon": "https://raw.githubusercontent.com/dbweb-ch/ioBroker.tesla-motors/master/admin/tesla-motors.png",
         "readme": "https://github.com/dbweb-ch/ioBroker.tesla-motors/blob/master/README.md",
         "loglevel": "info",
+        "restartAdapters": [
+            "tesla-motors"
+        ],
         "mode": "daemon",
         "type": "general",
         "compact": true,
