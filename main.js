@@ -10,7 +10,7 @@ class TeslaMotors extends utils.Adapter {
     /**
      * @param {Partial<ioBroker.AdapterOptions>} [options={}]
      */
-    constructor(options) {
+    constructor(options){
         super({
             ...options,
             name: 'tesla-motors',
@@ -23,8 +23,9 @@ class TeslaMotors extends utils.Adapter {
     /**
      * Is called when databases are connected and adapter received configuration.
      */
-    async onReady() {
+    async onReady(){ //
         const Adapter = this;
+        this.subscribeStates('command.*');
         this.log.debug('Starting Tesla Motors');
         this.setState('info.connection', false, true);
 
@@ -52,33 +53,37 @@ class TeslaMotors extends utils.Adapter {
         else if(Expires < new Date()){
             this.RefreshToken();
         }
-        else {
+        else{
             Adapter.setState('info.connection', true, true);
             Adapter.log.debug("Connected to Tesla");
         }
-        Adapter.initObject();
+        Adapter.initReadingObjects();
+        Adapter.initCommandObjects();
         Adapter.GetSleepingInfo();
+        Adapter.GetAllInfo();
         Adapter.log.debug("Everything intialized, starting Intervals");
         setInterval(function(){
             Adapter.RefreshToken();
-        }, 24*60*60*1000);
+        }, 24 * 60 * 60 * 1000);
 
         setInterval(function(){
             Adapter.GetSleepingInfo();
         }, 1 * 60 * 1000);
 
-        Adapter.GetAllInfo();
+        setInterval(function(){
+            Adapter.GetAllInfo();
+        }, 60 * 60 * 1000) // Todo: Make configurable and do the update more often when car is moving
     }
 
     /**
      * Is called when adapter shuts down - callback has to be called under any circumstances!
      * @param {() => void} callback
      */
-    onUnload(callback) {
-        try {
+    onUnload(callback){
+        try{
             this.log.info('cleaned everything up...');
             callback();
-        } catch (e) {
+        }catch(e){
             callback();
         }
     }
@@ -88,11 +93,12 @@ class TeslaMotors extends utils.Adapter {
      * @param {string} id
      * @param {ioBroker.Object | null | undefined} obj
      */
-    onObjectChange(id, obj) {
-        if (obj) {
+    onObjectChange(id, obj){
+        if(obj){
             // The object was changed
             this.log.info(`object ${id} changed: ${JSON.stringify(obj)}`);
-        } else {
+        }
+        else{
             // The object was deleted
             this.log.info(`object ${id} deleted`);
         }
@@ -103,13 +109,97 @@ class TeslaMotors extends utils.Adapter {
      * @param {string} id
      * @param {ioBroker.State | null | undefined} state
      */
-    onStateChange(id, state) {
-        if (state) {
-            // The state was changed
+    async onStateChange(id, state){
+        const Adapter = this;
+        Adapter.log.debug("State Change: " + id + " to " + state.val);
+        const authToken = await Adapter.getStateAsync('authToken');
+        const id_s = await Adapter.getStateAsync('vehicle.id_s');
+        var options = {
+            authToken: authToken.val,
+            vehicleID: id_s.val
+        };
+        const currentId = id.substring(Adapter.namespace.length + 1);
+        if(state && !state.ack){
+            switch(currentId){
+                case 'command.wakeUp':
+                    if(state.val){
+                        tjs.wakeUp(options);
+                        Adapter.setState('command.wakeUp', false);
+                    }
+                    break;
+                case 'command.doorLock':
+                    if(state.val){
+                        tjs.doorLock(options);
+                    }
+                    else{
+                        tjs.doorUnlock(options);
+                    }
+                    break;
+                case 'command.honkHorn':
+                    if(state.val){
+                        tjs.honkHorn(options);
+                        Adapter.setState('command.honkHorn', false);
+                    }
+                    break;
+                case 'command.Climate':
+                    if(state.val){
+                        tjs.climateStart(options);
+                    }
+                    else{
+                        tjs.climateStop(options);
+                    }
+                    break;
+                case 'command.SetTemperature':
+                    tjs.setTemps(options, state.val, state.val);
+                    break;
+                case 'command.SetChargeLimit':
+                    if(parseInt(state.val) > 100 || parseInt(state.val) < 0){
+                        Adapter.setState('command.SetChargeLimit', 80);
+                    }
+                    else tjs.setChargeLimit(options, state.val);
+                    break;
+                case 'command.ChargePort':
+                    if(state.val){
+                        tjs.openChargePort(options);
+                    }
+                    else{
+                        tjs.closeChargePort(options);
+                    }
+                    break;
+                case 'command.Charging':
+                    if(state.val){
+                        tjs.startCharge(options);
+                    }
+                    else{
+                        tjs.stopCharge(options);
+                    }
+                    break;
+                case 'command.ValetMode':
+                    const ValetPin = await Adapter.getStateAsync('command.ValetPin');
+                    if(/^\d{4}$/.test(ValetPin.val)){
+                        tjs.setValetMode(options, state.val, ValetPin.val);
+                    }
+                    else{
+                        if(!state.val){ // Ensure valet mode is off anyway!
+                            tjs.setValetMode(options, false, '0000');
+                            tjs.resetValetPin(options);
+                        }
+                        Adapter.setState('command.ValetPin', '????');
+                    }
+                    break;
+                case 'command.SpeedLimit':
+                    if(state.val){
+                        tjs.speedLimitActivate(options);
+                    }
+                    else{
+                        tjs.speedLimitDeactivate(options);
+                    }
+                    break;
+                case 'command.SpeedLimitValue':
+                    tjs.speedLimitSetLimit(options, state.val);
+                    break;
+            }
             this.log.info(`state ${id} changed: ${state.val} (ack = ${state.ack})`);
-        } else {
-            // The state was deleted
-            this.log.info(`state ${id} deleted`);
         }
     }
 
@@ -117,7 +207,7 @@ class TeslaMotors extends utils.Adapter {
         const Adapter = this;
         // No token, we try to get a token
         Adapter.log.info('Try to get a new token');
-        tjs.login(Adapter.config.teslaUsername, Adapter.config.teslaPassword, function(err, result) {
+        tjs.login(Adapter.config.teslaUsername, Adapter.config.teslaPassword, function(err, result){
             if(result.error || !result.authToken){
                 Adapter.log.error('Could not get token, stopping Adapter. error: ' + JSON.stringify(result.error));
                 this.setForeignState("system.adapter." + this.namespace + ".alive", false);
@@ -132,6 +222,7 @@ class TeslaMotors extends utils.Adapter {
             Adapter.setState('info.connection', true, true);
         });
     }
+
     async RefreshToken(){
         const Adapter = this;
         const tokenExpire = await this.getStateAsync('tokenExpire');
@@ -139,14 +230,14 @@ class TeslaMotors extends utils.Adapter {
         Expires.setDate(Expires.getDate() - 10);
         if(Expires < new Date()){
             const refreshToken = await this.getStateAsync('refreshToken');
-            tjs.refreshToken(refreshToken.val,function(err, result){
+            tjs.refreshToken(refreshToken.val, function(err, result){
                 if(result.response.statusCode != 200){
                     Adapter.log.warn('Could not refresh Token, trying to get a new Token');
                     Adapter.setState('authToken', '');
                     Adapter.setState('info.connection', false, true);
                     GetNewToken();
                 }
-                else {
+                else{
                     Adapter.log.info('Recieved a new authToken');
                     Adapter.setState('authToken', result.authToken);
                     Adapter.setState('refreshToken', result.refreshToken);
@@ -159,6 +250,7 @@ class TeslaMotors extends utils.Adapter {
             })
         }
     }
+
     /**
      * Get all infos that are available while car is sleeping
      * @constructor
@@ -168,10 +260,10 @@ class TeslaMotors extends utils.Adapter {
         Adapter.log.debug("Getting Sleeping Info");
 
         // Vehicle need to get synchronized as we need the id later!
-        await new Promise(async function(resolve, reject) {
+        await new Promise(async function(resolve, reject){
             const authToken = await Adapter.getStateAsync('authToken');
-            var options = { authToken: authToken.val };
-            tjs.vehicle(options, function (err, vehicle) {
+            var options = {authToken: authToken.val};
+            tjs.vehicle(options, function(err, vehicle){
                 if(err){
                     Adapter.log.error('Invalid answer from Vehicle request. Error: ' + err);
                     return;
@@ -193,27 +285,34 @@ class TeslaMotors extends utils.Adapter {
 
     async WakeItUp(){
         const Adapter = this;
-        Adapter.log.debug('Waking up the car...');
-        const authToken = await Adapter.getStateAsync('authToken');
-        const id_s = await Adapter.getStateAsync('vehicle.id_s');
-        var options = {
-            authToken: authToken.val,
-            vehicleID: id_s.val };
-        tjs.wakeUp(options, function (err, data) {
-            Adapter.log.debug("Car is awake. Answer:" + JSON.stringify(data));
-        });
+
+        await new Promise(async function(resolve, reject){
+            Adapter.log.debug('Waking up the car...');
+            const authToken = await Adapter.getStateAsync('authToken');
+            const id_s = await Adapter.getStateAsync('vehicle.id_s');
+            var options = {
+                authToken: authToken.val,
+                vehicleID: id_s.val
+            };
+            tjs.wakeUp(options, function(err, data){
+                Adapter.log.debug("Car is awake. Answer:" + JSON.stringify(data));
+                Adapter.setState('vehicle.state', 'online');
+                resolve();
+            });
+        })
     }
 
     async GetAllInfo(){
         const Adapter = this;
         await this.WakeItUp();
+        Adapter.log.debug('Getting all States now');
         const authToken = await Adapter.getStateAsync('authToken');
         const id_s = await Adapter.getStateAsync('vehicle.id_s');
         var options = {
             authToken: authToken.val,
-            vehicleID: id_s.val };
-
-        tjs.chargeState(options, function (err, data) {
+            vehicleID: id_s.val
+        };
+        tjs.chargeState(options, function(err, data){
             if(err){
                 Adapter.log.error('Invalid answer from chargeState request. Error: ' + err);
                 return;
@@ -241,7 +340,7 @@ class TeslaMotors extends utils.Adapter {
             }
         })
 
-        tjs.climateState(options, function (err, data) {
+        tjs.climateState(options, function(err, data){
             if(err){
                 Adapter.log.error('Invalid answer from climateState request. Error: ' + err);
                 return;
@@ -263,7 +362,7 @@ class TeslaMotors extends utils.Adapter {
             }
         })
 
-        tjs.driveState(options, function (err, data) {
+        tjs.driveState(options, function(err, data){
             if(err){
                 Adapter.log.error('Invalid answer from driveState request. Error: ' + err);
                 return;
@@ -280,7 +379,7 @@ class TeslaMotors extends utils.Adapter {
         })
     }
 
-    initObject(){
+    initReadingObjects(){
         // type: "number" | "string" | "boolean" | "array" | "object" | "mixed" | "file";
         // todo: Add Descriptions for States...
         // Vehicle
@@ -298,7 +397,7 @@ class TeslaMotors extends utils.Adapter {
         })
         this.setObjectNotExists('vehicle.state', {
             type: 'state',
-            common: {name: 'state', type: 'string', role: 'indicator', read: true, write: false}
+            common: {name: 'state', type: 'string', role: 'indicator', read: true, write: true}
         })
         if(EXTENDED_STATES){
             this.setObjectNotExists('vehicle.option_codes', {
@@ -458,16 +557,73 @@ class TeslaMotors extends utils.Adapter {
             common: {name: 'gps_as_of', type: 'number', role: 'indicator', read: true, write: false}
         })
     }
+
+    initCommandObjects(){
+        this.setObjectNotExists('command.wakeUp', {
+            type: 'state',
+            common: {name: 'wakeUp', type: 'boolean', role: 'button', read: true, write: true}
+        })
+        this.setObjectNotExists('command.doorLock', {
+            type: 'state',
+            common: {name: 'doorLock', type: 'boolean', role: 'switch', read: true, write: true}
+        })
+        this.setObjectNotExists('command.honkHorn', {
+            type: 'state',
+            common: {name: 'honkHorn', type: 'boolean', role: 'button', read: true, write: true}
+        })
+        this.setObjectNotExists('command.flashLights', {
+            type: 'state',
+            common: {name: 'flashLights', type: 'boolean', role: 'button', read: true, write: true}
+        })
+        this.setObjectNotExists('command.Climate', {
+            type: 'state',
+            common: {name: 'Climate', type: 'boolean', role: 'switch', read: true, write: true}
+        })
+        this.setObjectNotExists('command.SetTemperature', {
+            type: 'state',
+            common: {name: 'SetTemperature', type: 'number', role: 'indicator', read: true, write: true}
+        })
+        this.setObjectNotExists('command.SetChargeLimit', {
+            type: 'state',
+            common: {name: 'SetChargeLimit', type: 'number', role: 'slider', read: true, write: true}
+        })
+        this.setObjectNotExists('command.ChargePort', {
+            type: 'state',
+            common: {name: 'ChargePort', type: 'boolean', role: 'switch', read: true, write: true}
+        })
+        this.setObjectNotExists('command.Charging', {
+            type: 'state',
+            common: {name: 'Charging', type: 'boolean', role: 'switch', read: true, write: true}
+        })
+        this.setObjectNotExists('command.ValetMode', {
+            type: 'state',
+            common: {name: 'ValetMode', type: 'boolean', role: 'switch', read: true, write: true}
+        })
+        this.setObjectNotExists('command.ValetPin', {
+            type: 'state',
+            common: {name: 'ValetPin', type: 'string', role: 'indicator', read: true, write: true}
+        })
+        this.setObjectNotExists('command.SpeedLimit', {
+            type: 'state',
+            common: {name: 'SpeedLimit', type: 'boolean', role: 'switch', read: true, write: true}
+        })
+        this.setObjectNotExists('command.SpeedLimitValue', {
+            type: 'state',
+            common: {name: 'SpeedLimitValue', type: 'number', role: 'indicator', read: true, write: true}
+        })
+
+    }
 }
 
 // @ts-ignore parent is a valid property on module
-if (module.parent) {
+if(module.parent){
     // Export the constructor in compact mode
     /**
      * @param {Partial<ioBroker.AdapterOptions>} [options={}]
      */
     module.exports = (options) => new Template(options);
-} else {
+}
+else{
     // otherwise start the instance directly
     new TeslaMotors();
 }
