@@ -25,30 +25,38 @@ class TeslaMotors extends utils.Adapter {
      */
     async onReady(){ //
         const Adapter = this;
+
         this.subscribeStates('command.*');
         this.log.debug('Starting Tesla Motors');
         this.setState('info.connection', false, true);
 
         this.setObjectNotExists('authToken', {
             type: 'state',
-            common: {name: 'authToken', type: 'string', role: 'indicator', read: false, write: false}
+            common: {name: 'authToken', type: 'string', role: '', read: false, write: false},
+            native: []
         })
         this.setObjectNotExists('refreshToken', {
             type: 'state',
-            common: {name: 'refreshToken', type: 'string', role: 'indicator', read: false, write: false}
+            common: {name: 'refreshToken', type: 'string', role: '', read: false, write: false},
+            native: []
         })
         this.setObjectNotExists('tokenExpire', {
             type: 'state',
-            common: {name: 'tokenExpire', type: 'string', role: 'indicator', read: false, write: false}
+            common: {name: 'tokenExpire', type: 'number', role: '', read: false, write: false},
+            native: []
         })
         Adapter.log.debug("Check for Tokens and Expires");
         const authToken = await this.getStateAsync('authToken');
         const tokenExpire = await this.getStateAsync('tokenExpire');
+        if(!authToken || !tokenExpire){
+            Adapter.log.error("authToken or tokenExpire do not exists! Please reinstall Adapter");
+            return;
+        }
         var Expires = new Date(tokenExpire.val);
         Expires.setDate(Expires.getDate() - 10);
 
         if(authToken.val.length == 0){
-            this.GetNewToken(Adapter);
+            this.GetNewToken();
         }
         else if(Expires < new Date()){
             this.RefreshToken();
@@ -70,7 +78,7 @@ class TeslaMotors extends utils.Adapter {
 
         setInterval(function(){
             Adapter.GetAllInfo();
-        }, 60 * 60 * 1000) // Todo: Make configurable and do the update more often when car is moving
+        }, 1 * 60 * 1000) // Todo: Make configurable and do the update more often when car is moving
     }
 
     /**
@@ -109,9 +117,14 @@ class TeslaMotors extends utils.Adapter {
      */
     async onStateChange(id, state){
         const Adapter = this;
+        if(!state) return;
         Adapter.log.debug("State Change: " + id + " to " + state.val);
         const authToken = await Adapter.getStateAsync('authToken');
         const id_s = await Adapter.getStateAsync('vehicle.id_s');
+        if(!authToken || !id_s){
+            Adapter.log.error("authToken or vehicle.id_s do not exists! Please reinstall Adapter");
+            return;
+        }
         var options = {
             authToken: authToken.val,
             vehicleID: id_s.val
@@ -174,6 +187,10 @@ class TeslaMotors extends utils.Adapter {
                     break;
                 case 'command.ValetMode':
                     const ValetPin = await Adapter.getStateAsync('command.ValetPin');
+                    if(!ValetPin){
+                        Adapter.setStateCreate('command.ValetPin','????');
+                        break;
+                    }
                     if(/^\d{4}$/.test(ValetPin.val)){
                         tjs.setValetMode(options, state.val, ValetPin.val);
                     }
@@ -208,7 +225,7 @@ class TeslaMotors extends utils.Adapter {
         tjs.login(Adapter.config.teslaUsername, Adapter.config.teslaPassword, function(err, result){
             if(result.error || !result.authToken){
                 Adapter.log.error('Could not get token, stopping Adapter. error: ' + JSON.stringify(result.error));
-                this.setForeignState("system.adapter." + this.namespace + ".alive", false);
+                Adapter.setForeignState("system.adapter." + Adapter.namespace + ".alive", false);
                 return;
             }
             Adapter.log.info('Recieved a new Token');
@@ -216,7 +233,7 @@ class TeslaMotors extends utils.Adapter {
             Adapter.setState('refreshToken', result.refreshToken);
             var ExpireDate = new Date();
             ExpireDate.setSeconds(ExpireDate.getSeconds() + result.body.expires_in);
-            Adapter.setState('tokenExpire', ExpireDate);
+            Adapter.setState('tokenExpire', ExpireDate.getTime());
             Adapter.setState('info.connection', true, true);
         });
     }
@@ -224,16 +241,26 @@ class TeslaMotors extends utils.Adapter {
     async RefreshToken(){
         const Adapter = this;
         const tokenExpire = await this.getStateAsync('tokenExpire');
-        var Expires = new Date(tokenExpire.val);
+        if(!tokenExpire){
+            Adapter.setStateCreate('tokenExpire','','number',false,false);
+            var Expires = new Date(0);
+        }
+        else {
+            var Expires = new Date(tokenExpire.val);
+        }
         Expires.setDate(Expires.getDate() - 10);
         if(Expires < new Date()){
             const refreshToken = await this.getStateAsync('refreshToken');
+            if(!refreshToken){
+                Adapter.log.error('Missing State refreshToken, please restart Adapter');
+                return;
+            }
             tjs.refreshToken(refreshToken.val, function(err, result){
                 if(result.response.statusCode != 200){
                     Adapter.log.warn('Could not refresh Token, trying to get a new Token');
                     Adapter.setState('authToken', '');
                     Adapter.setState('info.connection', false, true);
-                    GetNewToken();
+                    Adapter.GetNewToken();
                 }
                 else{
                     Adapter.log.info('Recieved a new authToken');
@@ -241,7 +268,7 @@ class TeslaMotors extends utils.Adapter {
                     Adapter.setState('refreshToken', result.refreshToken);
                     var ExpireDate = new Date();
                     ExpireDate.setSeconds(ExpireDate.getSeconds() + result.body.expires_in);
-                    Adapter.setState('tokenExpire', ExpireDate);
+                    Adapter.setState('tokenExpire', ExpireDate.getTime());
                     Adapter.log.info("authToken updated. Now valid until " + ExpireDate.toLocaleDateString());
                     Adapter.setState('info.connection', true, true);
                 }
@@ -260,6 +287,11 @@ class TeslaMotors extends utils.Adapter {
         // Vehicle need to get synchronized as we need the id later!
         await new Promise(async function(resolve, reject){
             const authToken = await Adapter.getStateAsync('authToken');
+            if(!authToken){
+                Adapter.log.error("Missing authToken State, please restart Adapter");
+                reject();
+                return;
+            }
             var options = {authToken: authToken.val};
             tjs.vehicle(options, function(err, vehicle){
                 if(err){
@@ -289,6 +321,10 @@ class TeslaMotors extends utils.Adapter {
             Adapter.log.debug('Waking up the car...');
             const authToken = await Adapter.getStateAsync('authToken');
             const id_s = await Adapter.getStateAsync('vehicle.id_s');
+            if(!authToken || !id_s){
+                Adapter.log.error("authToken or vehicle.id_s do not exists! Please restart Adapter");
+                return;
+            }
             var options = {
                 authToken: authToken.val,
                 vehicleID: id_s.val
@@ -307,6 +343,10 @@ class TeslaMotors extends utils.Adapter {
         Adapter.log.debug('Getting all States now');
         const authToken = await Adapter.getStateAsync('authToken');
         const id_s = await Adapter.getStateAsync('vehicle.id_s');
+        if(!authToken || !id_s){
+            Adapter.log.error("authToken or vehicle.id_s do not exists! Please restart Adapter");
+            return;
+        }
         var options = {
             authToken: authToken.val,
             vehicleID: id_s.val
@@ -395,14 +435,11 @@ class TeslaMotors extends utils.Adapter {
     /**
      * @param type "number" | "string" | "boolean" | "array" | "object" | "mixed" | "file"
      */
-    setStateCreate(id, state, type, write, read, role){
-        type = type || 'string';
-        write = write || true;
-        read = read || true;
-        role = role || '';
+    setStateCreate(id, state, type = 'string', write = true, read = true, role = ''){
         this.setObjectNotExists(id, {
             type: 'state',
-            common: {name: id.substring(id.lastIndexOf('.') + 1), type: type, role: role, read: read, write: write}
+            common: {name: id.substring(id.lastIndexOf('.') + 1), type: type, role: role, read: read, write: write},
+            native: []
         })
         this.setState(id, state);
     }
