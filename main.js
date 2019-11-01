@@ -16,7 +16,6 @@ class TeslaMotors extends utils.Adapter {
             name: 'tesla-motors',
         });
         this.on('ready', this.onReady.bind(this));
-        this.on('objectChange', this.onObjectChange.bind(this));
         this.on('stateChange', this.onStateChange.bind(this));
         this.on('message', this.onMessage.bind(this));
     }
@@ -30,7 +29,7 @@ class TeslaMotors extends utils.Adapter {
         Adapter.initCommandObjects();
         this.subscribeStates('command.*');
         this.log.debug('Starting Tesla Motors');
-        this.setState('info.connection', false, true);
+        await Adapter.setStateAsync('info.connection', false, true);
 
         Adapter.log.debug("Check for Tokens and Expires");
 
@@ -44,7 +43,7 @@ class TeslaMotors extends utils.Adapter {
             this.RefreshToken();
         }
         else{
-            Adapter.setState('info.connection', true, true);
+            await Adapter.setStateAsync('info.connection', true, true);
             Adapter.log.debug("Connected to Tesla");
         }
         Adapter.GetSleepingInfo();
@@ -76,22 +75,6 @@ class TeslaMotors extends utils.Adapter {
     }
 
     /**
-     * Is called if a subscribed object changes
-     * @param {string} id
-     * @param {ioBroker.Object | null | undefined} obj
-     */
-    onObjectChange(id, obj){
-        if(obj){
-            // The object was changed
-            this.log.info(`object ${id} changed: ${JSON.stringify(obj)}`);
-        }
-        else{
-            // The object was deleted
-            this.log.info(`object ${id} deleted`);
-        }
-    }
-
-    /**
      * Is called if a subscribed state changes
      * @param {string} id
      * @param {ioBroker.State | null | undefined} state
@@ -101,6 +84,11 @@ class TeslaMotors extends utils.Adapter {
         if(!state) return;
         Adapter.log.debug("State Change: " + id + " to " + state.val);
 
+        const State = await Adapter.getStateAsync('info.connection');
+        if(!State){
+            Adapter.log.warn('You tried to set a State, but there is currently no valid Token, please configure Adapter first!');
+            return;
+        }
         var options = {
             authToken: Adapter.config.authToken,
             vehicleID: Adapter.config.vehicle_id_s
@@ -204,10 +192,10 @@ class TeslaMotors extends utils.Adapter {
             Adapter.log.info('Try to get a token');
 
             let Response = await new Promise(async function(resolve, reject){
-                tjs.login(username, password, function(err, result){
+                tjs.login(username, password, async function(err, result){
                     if(result.error || !result.authToken){
                         Adapter.log.info('Username or Password invalid' + result.body.response);
-                        Adapter.setState('info.connection', false, true);
+                        await Adapter.setStateAsync('info.connection', false, true);
                         resolve({
                             error: true,
                             msg: 'Could not retrieve token, Error from Tesla: ' + result.body.response});
@@ -216,7 +204,7 @@ class TeslaMotors extends utils.Adapter {
                     Adapter.log.info('Recieved a new Token');
                     let ExpireDate = new Date();
                     ExpireDate.setSeconds(ExpireDate.getSeconds() + result.body.expires_in);
-                    Adapter.setState('info.connection', true, true);
+                    await Adapter.setStateAsync('info.connection', true, true);
                     resolve({
                         error: false,
                         authToken: result.authToken,
@@ -250,70 +238,61 @@ class TeslaMotors extends utils.Adapter {
             Adapter.sendTo(msg.from, msg.command, {login: Response, vehicles: Vehicles}, msg.callback);
         }
     }
+
     GetNewToken(){
         const Adapter = this;
         // No token, we try to get a token
         Adapter.log.info('Try to get a new token');
-        tjs.login(Adapter.config.teslaUsername, Adapter.config.teslaPassword, function(err, result){
+        tjs.login(Adapter.config.teslaUsername, Adapter.config.teslaPassword, async function(err, result){
             if(result.error || !result.authToken){
-                Adapter.log.error('Could not get token, stopping Adapter. error: ' + JSON.stringify(result.error));
-                Adapter.setForeignState("system.adapter." + Adapter.namespace + ".alive", false);
-                return;
+                Adapter.log.warn('Could not get token, Adapter cant read anything.');
             }
-            Adapter.log.info('Recieved a new Token');
-            Adapter.log.error('Currently I dont know how to store this token in config, please refresh token over configuration');
-            Adapter.setState('info.connection', false, true);
-/*
-            Adapter.setState('authToken', result.authToken);
-            Adapter.setState('refreshToken', result.refreshToken);
-            let ExpireDate = new Date();
-            ExpireDate.setSeconds(ExpireDate.getSeconds() + result.body.expires_in);
-            Adapter.setState('tokenExpire', ExpireDate.getTime());
-            Adapter.setState('info.connection', true, true);
-            */
+            else {
+                await Adapter.SetNewToken(result.authToken, result.refreshToken, result.body.expires_in);
+            }
         });
     }
 
     async RefreshToken(){
         const Adapter = this;
-        const tokenExpire = await this.getStateAsync('tokenExpire');
-        let Expires = new Date(0);
-        if(!tokenExpire){
-            Adapter.setStateCreate('tokenExpire', '', 'number', false, false);
-        }
-        else{
-            Expires = new Date(tokenExpire.val);
-        }
-        Expires.setDate(Expires.getDate() - 10);
+
+        let Expires = new Date(Adapter.config.tokenExpire);
+        Expires.setDate(Expires.getDate() - 10); // Refresh 10 days before expire
         if(Expires < new Date()){
-            const refreshToken = await this.getStateAsync('refreshToken');
-            if(!refreshToken){
-                Adapter.log.error('Missing State refreshToken, please restart Adapter');
-                return;
-            }
-            tjs.refreshToken(refreshToken.val, function(err, result){
+            tjs.refreshToken(Adapter.config.refreshToken, async function(err, result){
                 if(result.response.statusCode !== 200){
                     Adapter.log.warn('Could not refresh Token, trying to get a new Token');
-                    Adapter.setState('authToken', '');
-                    Adapter.setState('info.connection', false, true);
+                    await Adapter.setStateAsync('info.connection', false, true);
                     Adapter.GetNewToken();
                 }
                 else{
-                    Adapter.log.info('Recieved a new Token');
-                    Adapter.log.error('Currently I dont know how to store this token in config, please refresh token over configuration');
-                    Adapter.setState('info.connection', false, true);
-                    /*
-                    Adapter.log.info('Recieved a new authToken');
-                    Adapter.setState('authToken', result.authToken);
-                    Adapter.setState('refreshToken', result.refreshToken);
-                    let ExpireDate = new Date();
-                    ExpireDate.setSeconds(ExpireDate.getSeconds() + result.body.expires_in);
-                    Adapter.setState('tokenExpire', ExpireDate.getTime());
-                    Adapter.log.info("authToken updated. Now valid until " + ExpireDate.toLocaleDateString());
-                    Adapter.setState('info.connection', true, true);*/
+                    await Adapter.SetNewToken(result.authToken, result.refreshToken, result.body.expires_in);
                 }
             })
         }
+    }
+
+    async SetNewToken(authToken, refreshToken, tokenExpire){
+        const Adapter = this;
+        Adapter.log.info('Setting a new Token, Adapter will reboot after this automatically');
+
+        let ExpireDate = new Date();
+        ExpireDate.setSeconds(ExpireDate.getSeconds() + tokenExpire);
+
+        // Set new token to the settings, Adapter will reboot afterwards...
+        let obj = await Adapter.getForeignObjectAsync(`system.adapter.${Adapter.namespace}`);
+
+        if(!obj){
+            Adapter.log.error('Could not get Adapter-Config');
+            return;
+        }
+        obj.native.authToken = Adapter.config.authToken = authToken;
+        obj.native.refreshToken = Adapter.config.refreshToken = refreshToken;
+        obj.native.tokenExpire = Adapter.config.tokenExpire = ExpireDate.getTime();
+
+        await Adapter.setForeignObjectAsync('system.adapter.tesla-motors.0',obj);
+
+        await Adapter.setStateAsync('info.connection', true, true);
     }
 
     /**
@@ -322,6 +301,11 @@ class TeslaMotors extends utils.Adapter {
      */
     async GetSleepingInfo(){
         const Adapter = this;
+        const State = await Adapter.getStateAsync('info.connection');
+        if(!State){
+            Adapter.log.warn('You tried to get States, but there is currently no valid Token, please configure Adapter first!');
+            return;
+        }
         Adapter.log.debug("Getting Sleeping Info");
 
         // Vehicle need to get synchronized as we need the id later!
@@ -350,7 +334,11 @@ class TeslaMotors extends utils.Adapter {
 
     async WakeItUp(){
         const Adapter = this;
-
+        const State = await Adapter.getStateAsync('info.connection');
+        if(!State){
+            Adapter.log.warn('You tried to wake up the car, but there is currently no valid Token, please configure Adapter first!');
+            return;
+        }
         await new Promise(async function(resolve, reject){
             Adapter.log.debug('Waking up the car...');
             let options = {
@@ -367,6 +355,11 @@ class TeslaMotors extends utils.Adapter {
 
     async GetAllInfo(){
         const Adapter = this;
+        const State = await Adapter.getStateAsync('info.connection');
+        if(!State){
+            Adapter.log.warn('You tried to wake up the car, but there is currently no valid Token, please configure Adapter first!');
+            return;
+        }
         await this.WakeItUp();
         Adapter.log.debug('Getting all States now');
         let options = {
