@@ -70,7 +70,8 @@
         "wakeupPlan": "smart",
         "extendedData": false,
         "vehicles": [],
-        "vehicle_id_s": ""
+        "vehicle_id_s": "",
+        "distanceUnit": "km"
     },
     "objects": [],
     "instanceObjects": []

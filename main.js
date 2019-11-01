@@ -175,7 +175,7 @@ class TeslaMotors extends utils.Adapter {
                     }
                     break;
                 case 'command.SpeedLimitValue':
-                    tjs.speedLimitSetLimit(options, state.val);
+                    tjs.speedLimitSetLimit(options, Adapter.km_m(state.val));
                     break;
             }
             this.log.info(`state ${id} changed: ${state.val} (ack = ${state.ack})`);
@@ -375,9 +375,9 @@ class TeslaMotors extends utils.Adapter {
 
             Adapter.setStateCreate('chargeState.charging_state', data.charging_state, 'string', false);
             Adapter.setStateCreate('chargeState.battery_level', data.battery_level, 'number', false);
-            Adapter.setStateCreate('chargeState.battery_range', data.battery_range, 'number', false);
-            Adapter.setStateCreate('chargeState.est_battery_range', data.est_battery_range, 'number', false);
-            Adapter.setStateCreate('chargeState.ideal_battery_range', data.ideal_battery_range, 'number', false);
+            Adapter.setStateCreate('chargeState.battery_range', Adapter.m_km(data.battery_range), 'number', false);
+            Adapter.setStateCreate('chargeState.est_battery_range', Adapter.m_km(data.est_battery_range), 'number', false);
+            Adapter.setStateCreate('chargeState.ideal_battery_range', Adapter.m_km(data.ideal_battery_range), 'number', false);
             Adapter.setStateCreate('chargeState.charge_limit_soc', data.charge_limit_soc, 'number', false);
             Adapter.setStateCreate('chargeState.charge_port_door_open', data.charge_port_door_open, 'boolean', false);
             Adapter.setStateCreate('chargeState.scheduled_charging_start_time', data.scheduled_charging_start_time, 'string', false);
@@ -387,7 +387,7 @@ class TeslaMotors extends utils.Adapter {
                 Adapter.setStateCreate('chargeState.fast_charger_present', data.fast_charger_present, 'boolean', false);
                 Adapter.setStateCreate('chargeState.usable_battery_level', data.usable_battery_level, 'number', false);
                 Adapter.setStateCreate('chargeState.charge_energy_added', data.charge_energy_added, 'number', false);
-                Adapter.setStateCreate('chargeState.charge_miles_added_rated', data.charge_miles_added_rated, 'number', false);
+                Adapter.setStateCreate('chargeState.charge_distance_added_rated', Adapter.m_km(data.charge_miles_added_rated), 'number', false);
                 Adapter.setStateCreate('chargeState.charger_voltage', data.charger_voltage, 'number', false);
                 Adapter.setStateCreate('chargeState.charger_power', data.charger_power, 'number', false);
                 Adapter.setStateCreate('chargeState.charge_current_request', data.charge_current_request, 'number', false);
@@ -424,7 +424,7 @@ class TeslaMotors extends utils.Adapter {
             Adapter.log.debug('driveState Answer:' + JSON.stringify(data));
 
             Adapter.setStateCreate('driveState.shift_state', data.shift_state, 'string', false);
-            Adapter.setStateCreate('driveState.speed', data.speed, 'number', false);
+            Adapter.setStateCreate('driveState.speed', Adapter.m_km(data.speed), 'number', false);
             Adapter.setStateCreate('driveState.power', data.power, 'number', false);
             Adapter.setStateCreate('driveState.latitude', data.latitude, 'number', false);
             Adapter.setStateCreate('driveState.longitude', data.longitude, 'number', false);
@@ -433,6 +433,14 @@ class TeslaMotors extends utils.Adapter {
         })
     }
 
+    m_km(value){
+        if(this.config.distanceUnit == 'miles') return value;
+        else return Math.round(value * 1.60934);
+    }
+    km_m(value){
+        if(this.config.distanceUnit == 'miles') return value;
+        else return Math.round(value / 1.60934);
+    }
     initCommandObjects(){
         this.setStateCreate('command.wakeUp', false, 'boolean', true, true, 'button');
         this.setStateCreate('command.doorLock', true);
