@@ -35,6 +35,8 @@
         "extIcon": "https://raw.githubusercontent.com/dbweb-ch/ioBroker.tesla-motors/master/admin/tesla-motors.png",
         "readme": "https://github.com/dbweb-ch/ioBroker.tesla-motors/blob/master/README.md",
         "loglevel": "info",
+        "messagebox": true,
+        "subscribe":  "messagebox",
         "restartAdapters": [
             "tesla-motors"
         ],
@@ -61,7 +63,11 @@
     },
     "native": {
         "teslaUsername": "",
-        "teslaPassword": ""
+        "teslaPassword": "",
+        "authToken": "",
+        "refreshToken": "",
+        "wakeupPlan": "smart",
+        "extendedData": false
     },
     "objects": [],
     "instanceObjects": []

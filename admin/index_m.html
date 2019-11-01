@@ -26,32 +26,80 @@
                 var $key = $(this);
                 var id = $key.attr('id');
                 if($key.attr('type') === 'checkbox'){
-                    // do not call onChange direct, because onChange could expect some arguments
-                    $key.prop('checked', settings[id])
-                        .on('change', () => onChange())
-                    ;
+                    $key.prop('checked', settings[id]);
                 }
                 else{
-                    // do not call onChange direct, because onChange could expect some arguments
-                    $key.val(settings[id])
-                        .on('change', () => onChange())
-                        .on('keyup', () => onChange())
-                    ;
+                    $key.val(settings[id]);
                 }
             });
             onChange(false);
 
+            if(settings['teslaUsername'].length > 0){
+                $('#saveCredentials').prop('checked',true);
+            }
+            else {
+                $('#teslaUsername, #teslaPassword').val('');
+                $('#saveCredentials').prop('checked',false);
+            }
+            $('#wakeupPlan').on('change', () => onChange());
+            $('#extendedData').on('change', () => onChange());
+
+            $('#teslaUsername, #teslaPassword').on('change keyup', function(){
+                $('#authToken, #refreshToken, #tokenExpire').val('').attr('timestamp', 0);
+            });
+
+            $('#getToken').on('click', function(){
+                getIsAdapterAlive(function(isAlive){
+                    if(!isAlive){
+                        showToast(null, _('Please start the Adapter first'));
+                    }
+                    else{
+                        $('#getToken').addClass('disabled');
+                        sendTo(null, 'getToken', {
+                            teslaUsername: $('#teslaUsername').val(),
+                            teslaPassword: $('#teslaPassword').val()
+                        }, function(response){
+                            $('#getToken').removeClass('disabled');
+                            if(response.error){
+                                showError(response.msg);
+                            }
+                            else{
+                                $('#authToken').val(response.authToken).trigger('click');
+                                $('#refreshToken').val(response.refreshToken).trigger('click');
+                                $('#tokenExpire')
+                                    .val(new Date(response.tokenExpire).toLocaleString())
+                                    .prop('timestamp', response.tokenExpire);
+                                onChange();
+                            }
+                        })
+                    }
+                })
+            });
             // reinitialize all the Materialize labels on the page if you are dynamically adding inputs:
             if(M) M.updateTextFields();
         }
 
         // This will be called by the admin adapter when the user presses the save button
         function save(callback){
-            // example: select elements with class=value and build settings object
+            // Checkup
+            if($('#authToken').val().length < 64 || $('#refreshToken').val().length < 64){
+                showMessage(_('You have to get a Token before storing!'));
+                return;
+            }
             var obj = {};
+            if(!$('#saveCredentials').prop('checked')){
+                $('#teslaUsername, #teslaPassword').val('');
+            }
+
             $('.value').each(function(){
                 var $this = $(this);
-                if($this.attr('type') === 'checkbox'){
+                if($this.attr('id') === 'tokenExpire'){
+                    obj[$this.attr('id')] = $this.prop('timestamp');
+                }
+                else if($this.attr('id') === 'saveCredentials'){
+
+                }
+                else if($this.attr('type') === 'checkbox'){
                     obj[$this.attr('id')] = $this.prop('checked');
                 }
                 else{
@@ -74,13 +122,57 @@
         </div>
     </div>
     <div class="row">
+        <div class="input-field col s6 m4">
+            <select id="wakeupPlan" class="value">
+                <option value="smart" class="translate">Smart</option>
+                <option value="aggresive" class="translate">Aggresive</option>
+                <option value="temperate" class="translate">Temperate</option>
+                <option value="off" class="translate">Off</option>
+            </select>
+            <label class="translate" for="wakeupPlan">Refresh Rate</label>
+        </div>
+        <div class="input-field col s6 m4">
+            <input id="extendedData" type="checkbox" class="value"/>
+            <label class="translate" for="extendedData">Recieve extended States</label>
+        </div>
+    </div>
+    <div class="row">
         <div class="col s6 input-field">
-            <input type="text" class="value" id="teslaUsername" placeholder="username@mailserver.com"/>
+            <input type="text" id="teslaUsername" class="value" placeholder="username@mailserver.com"/>
             <label for="teslaUsername" class="translate">Tesla Account User (Usually your Mailaddress)</label>
         </div>
         <div class="col s6 input-field">
-            <input type="password" class="value" id="teslaPassword"/>
+            <input type="password" id="teslaPassword" class="value"/>
             <label for="teslaPassword" class="translate">Tesla Account Password</label>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col s12 input-field">
+            <input id="saveCredentials" type="checkbox" class="value"/>
+            <label class="translate" for="saveCredentials">Save Credentials</label>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col s12">
+            <a id="getToken" class="waves-effect waves-light btn"><span class="translate">Get Token</span></a>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col s12 input-field">
+            <input type="text" class="value" id="authToken" readonly="readonly"/>
+            <label for="authToken" class="translate">Token</label>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col s12 input-field">
+            <input type="text" class="value" id="refreshToken" readonly="readonly"/>
+            <label for="refreshToken" class="translate">Refresh Token</label>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col s12 input-field">
+            <input type="text" class="value" id="tokenExpire" readonly="readonly"/>
+            <label for="tokenExpire" class="translate">Expires on (But will be refreshed automatically)</label>
         </div>
     </div>
 </div>

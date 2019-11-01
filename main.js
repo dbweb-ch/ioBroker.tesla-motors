@@ -18,6 +18,7 @@ class TeslaMotors extends utils.Adapter {
         this.on('ready', this.onReady.bind(this));
         this.on('objectChange', this.onObjectChange.bind(this));
         this.on('stateChange', this.onStateChange.bind(this));
+        this.on('message', this.onMessage.bind(this));
     }
 
     /**
@@ -217,6 +218,43 @@ class TeslaMotors extends utils.Adapter {
         }
     }
 
+    async onMessage(msg){
+        const Adapter = this;
+        Adapter.log.debug('Got a Message: ' + msg.command);
+        if(msg.command === 'getToken'){
+            // Get a Token
+            let username = msg.message.teslaUsername;
+            let password = msg.message.teslaPassword;
+            Adapter.log.info('Try to get a token');
+
+            let Response = await new Promise(async function(resolve, reject){
+                tjs.login(username, password, function(err, result){
+                    if(result.error || !result.authToken){
+                        Adapter.log.info('Username or Password invalid' + result.body.response);
+                        Adapter.setState('info.connection', false, true);
+                        resolve({
+                            error: true,
+                            msg: 'Could not retrieve token, Error from Tesla: ' + result.body.response});
+                        return;
+                    }
+                    Adapter.log.info('Recieved a new Token');
+                    Adapter.setState('authToken', result.authToken);
+                    Adapter.setState('refreshToken', result.refreshToken);
+                    let ExpireDate = new Date();
+                    ExpireDate.setSeconds(ExpireDate.getSeconds() + result.body.expires_in);
+                    Adapter.setState('tokenExpire', ExpireDate.getTime());
+                    Adapter.setState('info.connection', true, true);
+                    resolve({
+                        error: false,
+                        authToken: result.authToken,
+                        refreshToken: result.refreshToken,
+                        tokenExpire: ExpireDate.getTime(),
+                        message: 'Success'});
+                });
+            });
+            Adapter.sendTo(msg.from, msg.command, Response, msg.callback);
+        }
+    }
     GetNewToken(){
         const Adapter = this;
         // No token, we try to get a token
@@ -230,7 +268,7 @@ class TeslaMotors extends utils.Adapter {
             Adapter.log.info('Recieved a new Token');
             Adapter.setState('authToken', result.authToken);
             Adapter.setState('refreshToken', result.refreshToken);
-            var ExpireDate = new Date();
+            let ExpireDate = new Date();
             ExpireDate.setSeconds(ExpireDate.getSeconds() + result.body.expires_in);
             Adapter.setState('tokenExpire', ExpireDate.getTime());
             Adapter.setState('info.connection', true, true);
@@ -240,7 +278,7 @@ class TeslaMotors extends utils.Adapter {
     async RefreshToken(){
         const Adapter = this;
         const tokenExpire = await this.getStateAsync('tokenExpire');
-        var Expires = new Date(0);
+        let Expires = new Date(0);
         if(!tokenExpire){
             Adapter.setStateCreate('tokenExpire', '', 'number', false, false);
         }
@@ -265,7 +303,7 @@ class TeslaMotors extends utils.Adapter {
                     Adapter.log.info('Recieved a new authToken');
                     Adapter.setState('authToken', result.authToken);
                     Adapter.setState('refreshToken', result.refreshToken);
-                    var ExpireDate = new Date();
+                    let ExpireDate = new Date();
                     ExpireDate.setSeconds(ExpireDate.getSeconds() + result.body.expires_in);
                     Adapter.setState('tokenExpire', ExpireDate.getTime());
                     Adapter.log.info("authToken updated. Now valid until " + ExpireDate.toLocaleDateString());
@@ -291,7 +329,7 @@ class TeslaMotors extends utils.Adapter {
                 reject();
                 return;
             }
-            var options = {authToken: authToken.val};
+            let options = {authToken: authToken.val};
             tjs.vehicle(options, function(err, vehicle){
                 if(err){
                     Adapter.log.error('Invalid answer from Vehicle request. Error: ' + err);
@@ -325,7 +363,7 @@ class TeslaMotors extends utils.Adapter {
                 reject();
                 return;
             }
-            var options = {
+            let options = {
                 authToken: authToken.val,
                 vehicleID: id_s.val
             };
@@ -347,7 +385,7 @@ class TeslaMotors extends utils.Adapter {
             Adapter.log.error("authToken or vehicle.id_s do not exists! Please restart Adapter");
             return;
         }
-        var options = {
+        let options = {
             authToken: authToken.val,
             vehicleID: id_s.val
         };
