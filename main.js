@@ -27,36 +27,17 @@ class TeslaMotors extends utils.Adapter {
     async onReady(){ //
         const Adapter = this;
 
+        Adapter.initCommandObjects();
         this.subscribeStates('command.*');
         this.log.debug('Starting Tesla Motors');
         this.setState('info.connection', false, true);
 
-        this.setObjectNotExists('authToken', {
-            type: 'state',
-            common: {name: 'authToken', type: 'string', role: '', read: false, write: false},
-            native: []
-        });
-        this.setObjectNotExists('refreshToken', {
-            type: 'state',
-            common: {name: 'refreshToken', type: 'string', role: '', read: false, write: false},
-            native: []
-        });
-        this.setObjectNotExists('tokenExpire', {
-            type: 'state',
-            common: {name: 'tokenExpire', type: 'number', role: '', read: false, write: false},
-            native: []
-        });
         Adapter.log.debug("Check for Tokens and Expires");
-        const authToken = await this.getStateAsync('authToken');
-        const tokenExpire = await this.getStateAsync('tokenExpire');
-        if(!authToken || !tokenExpire){
-            Adapter.log.error("authToken or tokenExpire do not exists! Please reinstall Adapter");
-            return;
-        }
-        var Expires = new Date(tokenExpire.val);
+
+        var Expires = new Date(Adapter.config.tokenExpire);
         Expires.setDate(Expires.getDate() - 10);
 
-        if(authToken.val.length === 0){
+        if(Adapter.config.authToken.length === 0){
             this.GetNewToken();
         }
         else if(Expires < new Date()){
@@ -119,15 +100,10 @@ class TeslaMotors extends utils.Adapter {
         const Adapter = this;
         if(!state) return;
         Adapter.log.debug("State Change: " + id + " to " + state.val);
-        const authToken = await Adapter.getStateAsync('authToken');
-        const id_s = await Adapter.getStateAsync('vehicle.id_s');
-        if(!authToken || !id_s){
-            Adapter.log.error("authToken or vehicle.id_s do not exists! Please reinstall Adapter");
-            return;
-        }
+
         var options = {
-            authToken: authToken.val,
-            vehicleID: id_s.val
+            authToken: Adapter.config.authToken,
+            vehicleID: Adapter.config.vehicle_id_s
         };
         const currentId = id.substring(Adapter.namespace.length + 1);
         if(state && !state.ack){
@@ -238,21 +214,40 @@ class TeslaMotors extends utils.Adapter {
                         return;
                     }
                     Adapter.log.info('Recieved a new Token');
-                    Adapter.setState('authToken', result.authToken);
-                    Adapter.setState('refreshToken', result.refreshToken);
                     let ExpireDate = new Date();
                     ExpireDate.setSeconds(ExpireDate.getSeconds() + result.body.expires_in);
-                    Adapter.setState('tokenExpire', ExpireDate.getTime());
                     Adapter.setState('info.connection', true, true);
                     resolve({
                         error: false,
                         authToken: result.authToken,
                         refreshToken: result.refreshToken,
                         tokenExpire: ExpireDate.getTime(),
-                        message: 'Success'});
+                        msg: 'Success'});
                 });
             });
-            Adapter.sendTo(msg.from, msg.command, Response, msg.callback);
+            let Vehicles = {};
+            if(!Response.error){
+                Vehicles = await new Promise(async function(resolve, reject){
+                    let options = {authToken: Response.authToken};
+                    tjs.vehicles(options, function(err, vehicles){
+                        if(err){
+                            Adapter.log.info('Invalid answer from Vehicle request. Error: ' + err);
+                            resolve({
+                                error: true,
+                                msg: 'Could not get any vehicle'
+                                });
+                            return;
+                        }
+                        Adapter.log.debug('vehicles Answer:' + JSON.stringify(vehicles));
+                        resolve({
+                            error: false,
+                            msg: 'Success',
+                            vehicles: vehicles
+                        });
+                    });
+                });
+            }
+            Adapter.sendTo(msg.from, msg.command, {login: Response, vehicles: Vehicles}, msg.callback);
         }
     }
     GetNewToken(){
@@ -266,12 +261,16 @@ class TeslaMotors extends utils.Adapter {
                 return;
             }
             Adapter.log.info('Recieved a new Token');
+            Adapter.log.error('Currently I dont know how to store this token in config, please refresh token over configuration');
+            Adapter.setState('info.connection', false, true);
+/*
             Adapter.setState('authToken', result.authToken);
             Adapter.setState('refreshToken', result.refreshToken);
             let ExpireDate = new Date();
             ExpireDate.setSeconds(ExpireDate.getSeconds() + result.body.expires_in);
             Adapter.setState('tokenExpire', ExpireDate.getTime());
             Adapter.setState('info.connection', true, true);
+            */
         });
     }
 
@@ -300,6 +299,10 @@ class TeslaMotors extends utils.Adapter {
                     Adapter.GetNewToken();
                 }
                 else{
+                    Adapter.log.info('Recieved a new Token');
+                    Adapter.log.error('Currently I dont know how to store this token in config, please refresh token over configuration');
+                    Adapter.setState('info.connection', false, true);
+                    /*
                     Adapter.log.info('Recieved a new authToken');
                     Adapter.setState('authToken', result.authToken);
                     Adapter.setState('refreshToken', result.refreshToken);
@@ -307,7 +310,7 @@ class TeslaMotors extends utils.Adapter {
                     ExpireDate.setSeconds(ExpireDate.getSeconds() + result.body.expires_in);
                     Adapter.setState('tokenExpire', ExpireDate.getTime());
                     Adapter.log.info("authToken updated. Now valid until " + ExpireDate.toLocaleDateString());
-                    Adapter.setState('info.connection', true, true);
+                    Adapter.setState('info.connection', true, true);*/
                 }
             })
         }
@@ -323,13 +326,7 @@ class TeslaMotors extends utils.Adapter {
 
         // Vehicle need to get synchronized as we need the id later!
         await new Promise(async function(resolve, reject){
-            const authToken = await Adapter.getStateAsync('authToken');
-            if(!authToken){
-                Adapter.log.error("Missing authToken State, please restart Adapter");
-                reject();
-                return;
-            }
-            let options = {authToken: authToken.val};
+            let options = {authToken: Adapter.config.authToken};
             tjs.vehicle(options, function(err, vehicle){
                 if(err){
                     Adapter.log.error('Invalid answer from Vehicle request. Error: ' + err);
@@ -356,19 +353,12 @@ class TeslaMotors extends utils.Adapter {
 
         await new Promise(async function(resolve, reject){
             Adapter.log.debug('Waking up the car...');
-            const authToken = await Adapter.getStateAsync('authToken');
-            const id_s = await Adapter.getStateAsync('vehicle.id_s');
-            if(!authToken || !id_s){
-                Adapter.log.error("authToken or vehicle.id_s do not exists! Please restart Adapter");
-                reject();
-                return;
-            }
             let options = {
-                authToken: authToken.val,
-                vehicleID: id_s.val
+                authToken: Adapter.config.authToken,
+                vehicleID: Adapter.config.vehicle_id_s
             };
             tjs.wakeUp(options, function(err, data){
-                Adapter.log.debug("Car is awake. Answer:" + JSON.stringify(data));
+                Adapter.log.debug("Car is awake. Answer:" + JSON.stringify(data) + JSON.stringify(err));
                 Adapter.setState('vehicle.state', 'online');
                 resolve();
             });
@@ -379,15 +369,9 @@ class TeslaMotors extends utils.Adapter {
         const Adapter = this;
         await this.WakeItUp();
         Adapter.log.debug('Getting all States now');
-        const authToken = await Adapter.getStateAsync('authToken');
-        const id_s = await Adapter.getStateAsync('vehicle.id_s');
-        if(!authToken || !id_s){
-            Adapter.log.error("authToken or vehicle.id_s do not exists! Please restart Adapter");
-            return;
-        }
         let options = {
-            authToken: authToken.val,
-            vehicleID: id_s.val
+            authToken: Adapter.config.authToken,
+            vehicleID: Adapter.config.vehicle_id_s
         };
         tjs.chargeState(options, function(err, data){
             if(err){

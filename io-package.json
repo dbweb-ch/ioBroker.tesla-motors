@@ -66,8 +66,11 @@
         "teslaPassword": "",
         "authToken": "",
         "refreshToken": "",
+        "tokenExpire": 0,
         "wakeupPlan": "smart",
-        "extendedData": false
+        "extendedData": false,
+        "vehicles": [],
+        "vehicle_id_s": ""
     },
     "objects": [],
     "instanceObjects": []
