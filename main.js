@@ -34,17 +34,17 @@ class TeslaMotors extends utils.Adapter {
             type: 'state',
             common: {name: 'authToken', type: 'string', role: '', read: false, write: false},
             native: []
-        })
+        });
         this.setObjectNotExists('refreshToken', {
             type: 'state',
             common: {name: 'refreshToken', type: 'string', role: '', read: false, write: false},
             native: []
-        })
+        });
         this.setObjectNotExists('tokenExpire', {
             type: 'state',
             common: {name: 'tokenExpire', type: 'number', role: '', read: false, write: false},
             native: []
-        })
+        });
         Adapter.log.debug("Check for Tokens and Expires");
         const authToken = await this.getStateAsync('authToken');
         const tokenExpire = await this.getStateAsync('tokenExpire');
@@ -55,7 +55,7 @@ class TeslaMotors extends utils.Adapter {
         var Expires = new Date(tokenExpire.val);
         Expires.setDate(Expires.getDate() - 10);
 
-        if(authToken.val.length == 0){
+        if(authToken.val.length === 0){
             this.GetNewToken();
         }
         else if(Expires < new Date()){
@@ -83,7 +83,6 @@ class TeslaMotors extends utils.Adapter {
 
     /**
      * Is called when adapter shuts down - callback has to be called under any circumstances!
-     * @param {() => void} callback
      */
     onUnload(callback){
         try{
@@ -188,7 +187,7 @@ class TeslaMotors extends utils.Adapter {
                 case 'command.ValetMode':
                     const ValetPin = await Adapter.getStateAsync('command.ValetPin');
                     if(!ValetPin){
-                        Adapter.setStateCreate('command.ValetPin','????');
+                        Adapter.setStateCreate('command.ValetPin', '????');
                         break;
                     }
                     if(/^\d{4}$/.test(ValetPin.val)){
@@ -241,12 +240,12 @@ class TeslaMotors extends utils.Adapter {
     async RefreshToken(){
         const Adapter = this;
         const tokenExpire = await this.getStateAsync('tokenExpire');
+        var Expires = new Date(0);
         if(!tokenExpire){
-            Adapter.setStateCreate('tokenExpire','','number',false,false);
-            var Expires = new Date(0);
+            Adapter.setStateCreate('tokenExpire', '', 'number', false, false);
         }
-        else {
-            var Expires = new Date(tokenExpire.val);
+        else{
+            Expires = new Date(tokenExpire.val);
         }
         Expires.setDate(Expires.getDate() - 10);
         if(Expires < new Date()){
@@ -256,7 +255,7 @@ class TeslaMotors extends utils.Adapter {
                 return;
             }
             tjs.refreshToken(refreshToken.val, function(err, result){
-                if(result.response.statusCode != 200){
+                if(result.response.statusCode !== 200){
                     Adapter.log.warn('Could not refresh Token, trying to get a new Token');
                     Adapter.setState('authToken', '');
                     Adapter.setState('info.connection', false, true);
@@ -296,8 +295,8 @@ class TeslaMotors extends utils.Adapter {
             tjs.vehicle(options, function(err, vehicle){
                 if(err){
                     Adapter.log.error('Invalid answer from Vehicle request. Error: ' + err);
-                    return;
                     resolve();
+                    return;
                 }
                 Adapter.log.debug('vehicle Answer:' + JSON.stringify(vehicle));
 
@@ -323,6 +322,7 @@ class TeslaMotors extends utils.Adapter {
             const id_s = await Adapter.getStateAsync('vehicle.id_s');
             if(!authToken || !id_s){
                 Adapter.log.error("authToken or vehicle.id_s do not exists! Please restart Adapter");
+                reject();
                 return;
             }
             var options = {
@@ -377,7 +377,7 @@ class TeslaMotors extends utils.Adapter {
                 Adapter.setStateCreate('chargeState.charger_power', data.charger_power, 'number', false);
                 Adapter.setStateCreate('chargeState.charge_current_request', data.charge_current_request, 'number', false);
             }
-        })
+        });
 
         tjs.climateState(options, function(err, data){
             if(err){
@@ -399,7 +399,7 @@ class TeslaMotors extends utils.Adapter {
                 Adapter.setStateCreate('climateState.smart_preconditioning', data.smart_preconditioning, 'boolean', false);
                 Adapter.setStateCreate('climateState.is_auto_conditioning_on', data.is_auto_conditioning_on, 'boolean', false);
             }
-        })
+        });
 
         tjs.driveState(options, function(err, data){
             if(err){
@@ -417,6 +417,7 @@ class TeslaMotors extends utils.Adapter {
             Adapter.setStateCreate('driveState.gps_as_of', data.gps_as_of, 'number', false);
         })
     }
+
     initCommandObjects(){
         this.setStateCreate('command.wakeUp', false, 'boolean', true, true, 'button');
         this.setStateCreate('command.doorLock', true);
@@ -432,15 +433,16 @@ class TeslaMotors extends utils.Adapter {
         this.setStateCreate('command.SpeedLimit', false, 'boolean');
         this.setStateCreate('command.SpeedLimitValue', false, 'number');
     }
+
     /**
-     * @param type "number" | "string" | "boolean" | "array" | "object" | "mixed" | "file"
+     * type "number" | "string" | "boolean" | "array" | "object" | "mixed" | "file"
      */
     setStateCreate(id, state, type = 'string', write = true, read = true, role = ''){
         this.setObjectNotExists(id, {
             type: 'state',
             common: {name: id.substring(id.lastIndexOf('.') + 1), type: type, role: role, read: read, write: write},
             native: []
-        })
+        });
         this.setState(id, state);
     }
 
