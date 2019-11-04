@@ -18,6 +18,9 @@ class TeslaMotors extends utils.Adapter {
         this.on('message', this.onMessage.bind(this));
         this.distanceUnit = 'km/hr';
         this.WakeItUpRetryCount = 30;
+        this.lastTimeWokeUp = new Date();
+        this.lastWakeState = false;
+        this.refreshData = false;
     }
 
     /**
@@ -46,20 +49,93 @@ class TeslaMotors extends utils.Adapter {
             await Adapter.setStateAsync('info.connection', true, true);
             Adapter.log.debug("Connected to Tesla");
         }
-        await Adapter.GetSleepingInfo();
-        await Adapter.GetAllInfo();
-        Adapter.log.debug("Everything initialized, starting Intervals");
+
+        Adapter.log.debug("Everything initialized, setting up wakeUp strategy");
+        Adapter.SetupWakeupStrategy();
+        Adapter.refreshData = true;
+    }
+
+    async SetupWakeupStrategy(){
+        const Adapter = this;
+        // Check for Token Refresh once per day but sure on startup
+        await Adapter.RefreshToken();
         setInterval(() => {
             Adapter.RefreshToken();
         }, 24 * 60 * 60 * 1000);
-
+        // Get sleeping info once per minute
+        await Adapter.GetSleepingInfo();
         setInterval(() => {
             Adapter.GetSleepingInfo();
-        }, 1 * 60 * 1000);
+        }, 60 * 1000);
 
-        setInterval(() => {
-            Adapter.GetAllInfo();
-        }, 1 * 60 * 1000) // Todo: Make configurable and do the update more often when car is moving
+        // Setting up Interval based on wakeup-Plan
+        switch(Adapter.config.wakeupPlan){
+            case 'aggressive':
+                setInterval(() => {
+                    Adapter.GetAllInfo();
+                }, 60 * 1000); // Once per Minute
+                break;
+            case 'temperate':
+                setInterval(() => {
+                    Adapter.GetAllInfo();
+                }, 60 * 60 * 1000); // Once per Hour
+                break;
+            case 'off':
+                // Only get data when something changes or car is awake anyway (Done in GetSleepingInfo)
+                break;
+            case 'smart':
+            default:
+                /* Theory:
+                 * When car wakes up, there is someting happening.
+                 * So if car woke up, get data every minute for 10 minutes.
+                 * If nothing happend (Car start, Climate start, Charging) leave car alone to let him fall asleep.
+                 * If not went to sleep, request data and wait again 15 minutes.
+                 * But: If last wake up is more than 12 hours ago, request state!
+                 *
+                 * The whole thing is 1-minute-timer-based, so we do this stuff every minute
+                 */
+                setInterval(async () => {
+                    let Minutes = Math.floor((new Date().getTime() - this.lastTimeWokeUp.getTime() / 60000));
+                    // if car is in use, set lastTimeWokeUp to 0
+                    let shift_state = await Adapter.getStateAsync('driveState.shift_state');
+                    let speed = await Adapter.getStateAsync('driveState.speed');
+                    let climate = await Adapter.getStateAsync('command.Climate');
+                    let chargeState = await Adapter.getStateAsync('chargeState.charging_state');
+
+                    if((shift_state && shift_state.val !== null && shift_state.val !== "P") ||
+                        (speed && speed.val > 0) ||
+                        (climate && climate.val) ||
+                        (chargeState && chargeState.val !== 'Disconnected' && chargeState.val !== 'Complete')){
+                        this.lastTimeWokeUp = new Date();
+                    }
+                    if(Minutes <= 10){
+                        await Adapter.GetAllInfo();
+                    }
+                    else if(Minutes > 10 && Minutes <= 25){
+                        // Dont do anything, try to let the car sleep...
+                    }
+                    else if(Minutes > 25){
+                        // Check if car is still awake. If so, request once and then go back to "let it sleep"
+                        let awakeState = await Adapter.getStateAsync('command.awake');
+                        if(awakeState && awakeState.val && awakeState.ack){
+                            await Adapter.GetAllInfo();
+                            this.lastTimeWokeUp = new Date();
+                            this.lastTimeWokeUp.setMinutes(new Date().getMinutes() - 11);
+                        }
+                    }
+                    else if(Minutes > 60*12){
+                        await Adapter.GetAllInfo();
+                    }
+                }, 60 * 1000);
+                break;
+        }
+
+        setInterval(async () => {
+            if(Adapter.refreshData){
+                Adapter.refreshData = false;
+                await Adapter.GetAllInfo();
+            }
+        },1000); // Check if we are asked for a refresh
     }
 
     /**
@@ -253,7 +329,7 @@ class TeslaMotors extends utils.Adapter {
                     break;
             }
             if(requestDataChange){
-                await Adapter.GetAllInfo();
+                Adapter.refreshData = true;
             }
             this.log.info(`state ${id} changed: ${state.val} (ack = ${state.ack})`);
         }
@@ -387,27 +463,39 @@ class TeslaMotors extends utils.Adapter {
         }
         Adapter.log.debug("Getting Sleeping Info");
 
-        // Vehicle need to get synchronized as we need the id later!
         await new Promise(async resolve => {
-            let options = {authToken: Adapter.config.authToken};
-            tjs.vehicle(options, (err, vehicle) => {
-                if(err){
-                    Adapter.log.error('Invalid answer from Vehicle request. Error: ' + err);
-                    resolve();
-                    return;
+            let vehicleIndex = 0;
+            Adapter.config.vehicles.forEach(function(vehicle,idx) {
+                if(vehicle.id_s === Adapter.config.vehicle_id_s){
+                    vehicleIndex = idx;
                 }
-                Adapter.log.debug('vehicle Answer:' + JSON.stringify(vehicle));
+            });
+            let options = {
+                authToken: Adapter.config.authToken,
+                carIndex: vehicleIndex};
 
-                Adapter.setStateCreate('vehicle.id_s', vehicle.id_s, 'string', false);
-                Adapter.setStateCreate('vehicle.vin', vehicle.vin, 'string', false);
-                Adapter.setStateCreate('vehicle.display_name', vehicle.display_name, 'string', false);
-                Adapter.setStateCreate('command.awake', vehicle.state === 'online', 'boolean', true);
-                if(Adapter.config.extendedData){
-                    Adapter.setStateCreate('vehicle.option_codes', vehicle.option_codes, 'string', false);
-                    Adapter.setStateCreate('vehicle.color', vehicle.color, 'string', false);
-                }
+            let vehicle = await tjs.vehicleAsync(options).catch(err => {
+                Adapter.log.error('Invalid answer from Vehicle request. Error: ' + err);
                 resolve();
             });
+            Adapter.log.debug('vehicle Answer:' + JSON.stringify(vehicle));
+
+            Adapter.setStateCreate('vehicle.id_s', vehicle.id_s, 'string', false);
+            Adapter.setStateCreate('vehicle.vin', vehicle.vin, 'string', false);
+            Adapter.setStateCreate('vehicle.display_name', vehicle.display_name, 'string', false);
+            Adapter.setStateCreate('command.awake', vehicle.state === 'online', 'boolean', true);
+            if(Adapter.config.extendedData){
+                Adapter.setStateCreate('vehicle.option_codes', vehicle.option_codes, 'string', false);
+                Adapter.setStateCreate('vehicle.color', vehicle.color, 'string', false);
+            }
+
+            if(vehicle.state === 'online' && !this.lastWakeState){
+                // Car was sleeping before, but woke up now. So we trigger a refresh of data
+                this.refreshData = true;
+                this.lastTimeWokeUp = new Date();
+            }
+            this.lastWakeState = vehicle.state === 'online';
+            resolve();
         })
     }
 
@@ -421,9 +509,8 @@ class TeslaMotors extends utils.Adapter {
         // Check if not yet awake
         await Adapter.GetSleepingInfo();
         let awakeState;
-        awakeState = await Adapter.getStateAsync('command.awake').catch(() => {
-        });
-        if(awakeState && awakeState.val) return;
+        awakeState = await Adapter.getStateAsync('command.awake');
+        if(awakeState && awakeState.val && awakeState.ack) return;
 
         await new Promise(async resolve => {
             Adapter.log.debug('Waking up the car...');

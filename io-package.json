@@ -3,6 +3,10 @@
         "name": "tesla-motors",
         "version": "0.0.2",
         "news": {
+            "0.0.3": {
+                "en": "Implement additional wakeup-Strategies",
+                "de": "Implementiere erweiterte Aufwachstrategien"
+            },
             "0.0.2": {
                 "en": "Read and control all states",
                 "de": "Lesen und ändern aller Zustände"
