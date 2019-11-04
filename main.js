@@ -33,31 +33,31 @@ class TeslaMotors extends utils.Adapter {
 
         Adapter.log.debug("Check for Tokens and Expires");
 
-        var Expires = new Date(Adapter.config.tokenExpire);
+        let Expires = new Date(Adapter.config.tokenExpire);
         Expires.setDate(Expires.getDate() - 10);
 
         if(Adapter.config.authToken.length === 0){
-            this.GetNewToken();
+            await this.GetNewToken();
         }
         else if(Expires < new Date()){
-            this.RefreshToken();
+            await this.RefreshToken();
         }
         else{
             await Adapter.setStateAsync('info.connection', true, true);
             Adapter.log.debug("Connected to Tesla");
         }
-        Adapter.GetSleepingInfo();
-        Adapter.GetAllInfo();
-        Adapter.log.debug("Everything intialized, starting Intervals");
-        setInterval(function(){
+        await Adapter.GetSleepingInfo();
+        await Adapter.GetAllInfo();
+        Adapter.log.debug("Everything initialized, starting Intervals");
+        setInterval(() => {
             Adapter.RefreshToken();
         }, 24 * 60 * 60 * 1000);
 
-        setInterval(function(){
+        setInterval(() => {
             Adapter.GetSleepingInfo();
         }, 1 * 60 * 1000);
 
-        setInterval(function(){
+        setInterval(() => {
             Adapter.GetAllInfo();
         }, 1 * 60 * 1000) // Todo: Make configurable and do the update more often when car is moving
     }
@@ -89,14 +89,14 @@ class TeslaMotors extends utils.Adapter {
             Adapter.log.warn('You tried to set a State, but there is currently no valid Token, please configure Adapter first!');
             return;
         }
-        var options = {
+        let options = {
             authToken: Adapter.config.authToken,
             vehicleID: Adapter.config.vehicle_id_s
         };
         const currentId = id.substring(Adapter.namespace.length + 1);
         if(state && !state.ack){
             let requestDataChange = true;
-            Adapter.WakeItUp();
+            await Adapter.WakeItUp();
             switch(currentId){
                 case 'command.awake':
                     if(state.val){
@@ -268,8 +268,8 @@ class TeslaMotors extends utils.Adapter {
             let password = msg.message.teslaPassword;
             Adapter.log.info('Try to get a token');
 
-            let Response = await new Promise(async function(resolve, reject){
-                tjs.login(username, password, async function(err, result){
+            let Response = await new Promise(async resolve => {
+                tjs.login(username, password, async (err, result) => {
                     if(result.error || !result.authToken){
                         Adapter.log.info('Username or Password invalid' + result.body.response);
                         await Adapter.setStateAsync('info.connection', false, true);
@@ -279,7 +279,7 @@ class TeslaMotors extends utils.Adapter {
                         });
                         return;
                     }
-                    Adapter.log.info('Recieved a new Token');
+                    Adapter.log.info('Received a new Token');
                     let ExpireDate = new Date();
                     ExpireDate.setSeconds(ExpireDate.getSeconds() + result.body.expires_in);
                     await Adapter.setStateAsync('info.connection', true, true);
@@ -294,9 +294,9 @@ class TeslaMotors extends utils.Adapter {
             });
             let Vehicles = {};
             if(!Response.error){
-                Vehicles = await new Promise(async function(resolve, reject){
+                Vehicles = await new Promise(async resolve => {
                     let options = {authToken: Response.authToken};
-                    tjs.vehicles(options, function(err, vehicles){
+                    tjs.vehicles(options, (err, vehicles) => {
                         if(err){
                             Adapter.log.info('Invalid answer from Vehicle request. Error: ' + err);
                             resolve({
@@ -318,11 +318,11 @@ class TeslaMotors extends utils.Adapter {
         }
     }
 
-    GetNewToken(){
+    async GetNewToken(){
         const Adapter = this;
         // No token, we try to get a token
         Adapter.log.info('Try to get a new token');
-        tjs.login(Adapter.config.teslaUsername, Adapter.config.teslaPassword, async function(err, result){
+        await tjs.login(Adapter.config.teslaUsername, Adapter.config.teslaPassword, async (err, result) => {
             if(result.error || !result.authToken){
                 Adapter.log.warn('Could not get token, Adapter cant read anything.');
             }
@@ -338,7 +338,7 @@ class TeslaMotors extends utils.Adapter {
         let Expires = new Date(Adapter.config.tokenExpire);
         Expires.setDate(Expires.getDate() - 10); // Refresh 10 days before expire
         if(Expires < new Date()){
-            tjs.refreshToken(Adapter.config.refreshToken, async function(err, result){
+            tjs.refreshToken(Adapter.config.refreshToken, async (err, result) => {
                 if(result.response.statusCode !== 200){
                     Adapter.log.warn('Could not refresh Token, trying to get a new Token');
                     await Adapter.setStateAsync('info.connection', false, true);
@@ -375,7 +375,7 @@ class TeslaMotors extends utils.Adapter {
     }
 
     /**
-     * Get all infos that are available while car is sleeping
+     * Get all info that are available while car is sleeping
      * @constructor
      */
     async GetSleepingInfo(){
@@ -388,9 +388,9 @@ class TeslaMotors extends utils.Adapter {
         Adapter.log.debug("Getting Sleeping Info");
 
         // Vehicle need to get synchronized as we need the id later!
-        await new Promise(async function(resolve, reject){
+        await new Promise(async resolve => {
             let options = {authToken: Adapter.config.authToken};
-            tjs.vehicle(options, function(err, vehicle){
+            tjs.vehicle(options, (err, vehicle) => {
                 if(err){
                     Adapter.log.error('Invalid answer from Vehicle request. Error: ' + err);
                     resolve();
@@ -425,7 +425,7 @@ class TeslaMotors extends utils.Adapter {
         });
         if(awakeState && awakeState.val) return;
 
-        await new Promise(async function(resolve, reject){
+        await new Promise(async resolve => {
             Adapter.log.debug('Waking up the car...');
             let options = {
                 authToken: Adapter.config.authToken,
@@ -437,9 +437,8 @@ class TeslaMotors extends utils.Adapter {
                 if(err || data.state !== "online"){
                     if(Adapter.WakeItUpRetryCount > 0){
                         Adapter.log.debug("Cant wake up the car, Retrying in 2 Seconds...");
-                        await new Promise(resolve => {
-                            setTimeout(Adapter.WakeItUp, 2000);
-                        });
+                        await Sleep(2000);
+                        await Adapter.WakeItUp();
                     }
                     else{
                         Adapter.log.warn("Was not able to wake up the car within 50 Seconds. Car has maybe not internet connection");
@@ -491,7 +490,7 @@ class TeslaMotors extends utils.Adapter {
 
         // States with in and out
         Adapter.setStateCreate('command.doorLock', vd.vehicle_state.locked, 'boolean', false);
-        Adapter.setState('command.awake', vd.state == 'online', true);
+        Adapter.setState('command.awake', ('online' === vd.state), true);
         Adapter.setState('command.Climate', vd.climate_state.is_climate_on, true);
         Adapter.setState('command.SetTemperature', vd.climate_state.driver_temp_setting, true);
         Adapter.setState('command.SetChargeLimit', vd.charge_state.charge_limit_soc, true);
@@ -544,7 +543,7 @@ class TeslaMotors extends utils.Adapter {
         Adapter.setStateCreate('climateState.run_roof_installed', vd.vehicle_config.sun_roof_installed, 'number', false);
         if(vd.vehicle_config.sun_roof_installed){
             Adapter.setStateCreate('climateState.sun_roof_percent_open', vd.climate_state.sun_roof_percent_open, 'number', true);
-            Adapter.setStateCreate('command.SunRoofVent', vd.climate_state.sun_roof_state == 'vent', 'boolean', false);
+            Adapter.setStateCreate('command.SunRoofVent', 'vent' === vd.climate_state.sun_roof_state, 'boolean', false);
         }
         if(Adapter.config.extendedData){
             Adapter.setStateCreate('climateState.wiper_blade_heater', vd.climate_state.wiper_blade_heater, 'boolean', false);
@@ -583,12 +582,12 @@ class TeslaMotors extends utils.Adapter {
     }
 
     m_km(value){
-        if(this.distanceUnit == 'mi/hr') return value;
+        if(this.distanceUnit === 'mi/hr') return value;
         else return Math.round(value * 1.60934);
     }
 
     km_m(value){
-        if(this.distanceUnit == 'mi/hr') return value;
+        if(this.distanceUnit === 'mi/hr') return value;
         else return Math.round(value / 1.60934);
     }
 
@@ -640,4 +639,8 @@ if(module.parent){
 else{
     // otherwise start the instance directly
     new TeslaMotors();
+}
+
+function Sleep(milliseconds) {
+    return new Promise(resolve => setTimeout(resolve, milliseconds));
 }

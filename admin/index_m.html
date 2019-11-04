@@ -24,15 +24,15 @@
             if(!settings) return;
 
             // Fill select list
-            settings['vehicles'].forEach(function(vehicle){
+            settings['vehicles'].forEach(vehicle => {
                 let option = $('<option>',{id:vehicle.id_s})
                     .text(vehicle.name);
                 $('#vehicle_id_s').append(option);
             });
 
-            $('.value').each(function(){
-                var $key = $(this);
-                var id = $key.attr('id');
+            $('.value').each(function() {
+                let $key = $(this);
+                let id = $key.attr('id');
                 if(id === 'tokenExpire'){
                     if(parseInt(settings[id]) > 0){
                         $key.val(new Date(settings[id]).toLocaleString()).prop('timestamp', settings[id]);
@@ -62,13 +62,13 @@
             $('#extendedData').on('change', () => onChange());
             $('#vehicle_id_s').on('change', () => onChange());
 
-            $('#teslaUsername, #teslaPassword').on('change keyup', function(){
+            $('#teslaUsername, #teslaPassword').on('change keyup', () => {
                 $('#authToken, #refreshToken, #tokenExpire').val('').attr('timestamp', 0);
             });
 
-            $('#getToken').on('click', function(){
+            $('#getToken').on('click', () => {
                 $('#vehicle_id_s').empty();
-                getIsAdapterAlive(function(isAlive){
+                getIsAdapterAlive(isAlive => {
                     if(!isAlive){
                         showToast(null, _('Please start the Adapter first'));
                     }
@@ -77,7 +77,7 @@
                         sendTo(null, 'getToken', {
                             teslaUsername: $('#teslaUsername').val(),
                             teslaPassword: $('#teslaPassword').val()
-                        }, function(response){
+                        }, response => {
                             $('#getToken').removeClass('disabled');
                             if(response.login.error){
                                 showError(response.login.msg);
@@ -92,7 +92,7 @@
                                     showError(response.vehicles.msg);
                                 }
                                 else {
-                                    response.vehicles.vehicles.forEach(function(vehicle){
+                                    response.vehicles.vehicles.forEach(vehicle => {
                                         let option = $('<option>',{id:vehicle.id_s})
                                             .text(vehicle.display_name + '(' + vehicle.vin + ')');
                                         $('#vehicle_id_s').append(option);
@@ -116,17 +116,17 @@
                 showMessage(_('You have to get a Token before storing!'));
                 return;
             }
-            var obj = {};
+            let obj = {};
             if(!$('#saveCredentials').prop('checked')){
                 $('#teslaUsername, #teslaPassword').val('');
             }
             obj['vehicles'] = [];
-            $.each($('#vehicle_id_s option'),function(index,vehicle){
+            $.each($('#vehicle_id_s option'),(index,vehicle) => {
                 obj['vehicles'][index] = {id_s:$(vehicle).prop('id'), name:$(vehicle).text()};
             });
 
             $('.value').each(function(){
-                var $this = $(this);
+                let $this = $(this);
                 if($this.attr('id') === 'tokenExpire'){
                     obj[$this.attr('id')] = $this.prop('timestamp');
                 }
@@ -161,7 +161,7 @@
         <div class="input-field col s12 m4">
             <select id="wakeupPlan" class="value">
                 <option value="smart" class="translate">Smart</option>
-                <option value="aggresive" class="translate">Aggresive</option>
+                <option value="aggressive" class="translate">Aggressive</option>
                 <option value="temperate" class="translate">Temperate</option>
                 <option value="off" class="translate">Off</option>
             </select>
@@ -171,7 +171,7 @@
     <div class="row">
         <div class="col s5 input-field">
             <input type="text" id="teslaUsername" class="value" placeholder="username@mailserver.com"/>
-            <label for="teslaUsername" class="translate">Tesla Account User (Usually your Mailaddress)</label>
+            <label for="teslaUsername" class="translate">Tesla Account User (Usually your Mail address)</label>
         </div>
         <div class="col s5 input-field">
             <input type="password" id="teslaPassword" class="value"/>
@@ -209,7 +209,7 @@
     <div class="row">
         <div class="input-field col s12 m4">
             <input id="extendedData" type="checkbox" class="value"/>
-            <label class="translate" for="extendedData">Recieve extended States</label>
+            <label class="translate" for="extendedData">Receive extended States</label>
         </div>
     </div>
 </div>
