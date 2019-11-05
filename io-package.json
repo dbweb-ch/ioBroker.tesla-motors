@@ -58,7 +58,7 @@
         "materialize": true,
         "materializeTab": true,
         "adminTab": {
-            "singleton": true,
+            "singleton": false,
             "name": {
                 "en": "Tesla Motors",
                 "de": "Tesla Motors"
