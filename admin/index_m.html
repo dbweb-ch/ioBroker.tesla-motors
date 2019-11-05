@@ -25,7 +25,7 @@
 
             // Fill select list
             settings['vehicles'].forEach(vehicle => {
-                let option = $('<option>',{id:vehicle.id_s})
+                let option = $('<option>', {value: vehicle.id_s})
                     .text(vehicle.name);
                 $('#vehicle_id_s').append(option);
             });
@@ -93,11 +93,11 @@
                                 }
                                 else {
                                     response.vehicles.vehicles.forEach(vehicle => {
-                                        let option = $('<option>',{id:vehicle.id_s})
+                                        let option = $('<option>', {value: vehicle.id_s})
                                             .text(vehicle.display_name + '(' + vehicle.vin + ')');
                                         $('#vehicle_id_s').append(option);
                                     });
-                                    $("#vehicle_id_s option:first").prop("selected", "selected");
+                                    $("#vehicle_id_s").val($("#vehicle_id_s option:first").val());
                                 }
                                 onChange();
                             }
@@ -122,7 +122,7 @@
             }
             obj['vehicles'] = [];
             $.each($('#vehicle_id_s option'),(index,vehicle) => {
-                obj['vehicles'][index] = {id_s:$(vehicle).prop('id'), name:$(vehicle).text()};
+                obj['vehicles'][index] = {id_s: $(vehicle).val(), name: $(vehicle).text()};
             });
 
             $('.value').each(function(){
@@ -140,8 +140,6 @@
                     obj[$this.attr('id')] = $this.val();
                 }
             });
-            // Temp fix for unknown why select does it wrong...
-            obj.vehicle_id_s = $('#vehicle_id_s option:selected').attr('id');
             callback(obj);
         }
     </script>

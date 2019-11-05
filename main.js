@@ -16,7 +16,7 @@ class TeslaMotors extends utils.Adapter {
         this.on('ready', this.onReady.bind(this));
         this.on('stateChange', this.onStateChange.bind(this));
         this.on('message', this.onMessage.bind(this));
-        this.distanceUnit = 'km/hr';
+        this.distanceUnit = 'km/h';
         this.WakeItUpRetryCount = 30;
         this.lastTimeWokeUp = new Date();
         this.lastWakeState = false;
@@ -576,7 +576,7 @@ class TeslaMotors extends utils.Adapter {
         Adapter.log.debug("Vehicle Data: " + JSON.stringify(vd));
 
         // km or miles?
-        Adapter.distanceUnit = vd.gui_settings.gui_distance_units;
+        Adapter.distanceUnit = vd.gui_settings.gui_distance_units === 'mi/hr' ? 'mi/hr' : 'km/h';
 
         // States with in and out
         Adapter.setStateCreate('command.doorLock','Lock / Open the door', vd.vehicle_state.locked, 'boolean', false);
@@ -608,9 +608,9 @@ class TeslaMotors extends utils.Adapter {
         // all other states
         Adapter.setStateCreate('chargeState.charging_state','Charging State', vd.charge_state.charging_state, 'string', false);
         Adapter.setStateCreate('chargeState.battery_level','Battery level in %', vd.charge_state.battery_level, 'number', false, true, '', '%');
-        Adapter.setStateCreate('chargeState.battery_range','Battery Range', Adapter.m_km(vd.charge_state.battery_range), 'number', false, true, '', Adapter.distanceUnit);
-        Adapter.setStateCreate('chargeState.est_battery_range','Estimated Battery Range', Adapter.m_km(vd.charge_state.est_battery_range), 'number', false, true, '', Adapter.distanceUnit);
-        Adapter.setStateCreate('chargeState.ideal_battery_range','Ideal Battery Range', Adapter.m_km(vd.charge_state.ideal_battery_range), 'number', false, true, '', Adapter.distanceUnit);
+        Adapter.setStateCreate('chargeState.battery_range', 'Battery Range', Adapter.m_km(vd.charge_state.battery_range), 'number', false, true, '', Adapter.distanceUnit.substr(0, Adapter.distanceUnit.indexOf('/')));
+        Adapter.setStateCreate('chargeState.est_battery_range', 'Estimated Battery Range', Adapter.m_km(vd.charge_state.est_battery_range), 'number', false, true, '', Adapter.distanceUnit.substr(0, Adapter.distanceUnit.indexOf('/')));
+        Adapter.setStateCreate('chargeState.ideal_battery_range', 'Ideal Battery Range', Adapter.m_km(vd.charge_state.ideal_battery_range), 'number', false, true, '', Adapter.distanceUnit.substr(0, Adapter.distanceUnit.indexOf('/')));
         Adapter.setStateCreate('chargeState.scheduled_charging_start_time','Scheduled charge start Time', vd.charge_state.scheduled_charging_start_time, 'string', false);
         Adapter.setStateCreate('chargeState.battery_heater_on','Battery Heater State', vd.charge_state.battery_heater_on, 'boolean', false);
         Adapter.setStateCreate('chargeState.minutes_to_full_charge','Minutes to fully Charge', vd.charge_state.minutes_to_full_charge, 'number', false);
@@ -619,7 +619,7 @@ class TeslaMotors extends utils.Adapter {
             Adapter.setStateCreate('chargeState.fast_charger_present','Fast Charger connected', vd.charge_state.fast_charger_present, 'boolean', false);
             Adapter.setStateCreate('chargeState.usable_battery_level','Usable battery level', vd.charge_state.usable_battery_level, 'number', false, true, '', '%');
             Adapter.setStateCreate('chargeState.charge_energy_added','Energy added with Charge', vd.charge_state.charge_energy_added, 'number', false, true, '', 'kW');
-            Adapter.setStateCreate('chargeState.charge_distance_added_rated','Distance added with Charge', Adapter.m_km(vd.charge_state.charge_miles_added_rated), 'number', false, true, '', Adapter.distanceUnit);
+            Adapter.setStateCreate('chargeState.charge_distance_added_rated', 'Distance added with Charge', Adapter.m_km(vd.charge_state.charge_miles_added_rated), 'number', false, true, '', Adapter.distanceUnit.substr(0, Adapter.distanceUnit.indexOf('/')));
             Adapter.setStateCreate('chargeState.charger_voltage','Charger Voltage', vd.charge_state.charger_voltage, 'number', false, true, '', 'V');
             Adapter.setStateCreate('chargeState.charger_power','Charger Power', vd.charge_state.charger_power, 'number', false, true, '', 'W');
             Adapter.setStateCreate('chargeState.charge_current_request','Charge current requested', vd.charge_state.charge_current_request, 'number', false, true, '', 'A');
