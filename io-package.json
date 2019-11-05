@@ -39,7 +39,7 @@
         "platform": "Javascript/Node.js",
         "main": "main.js",
         "icon": "tesla-motors.png",
-        "enabled": false,
+        "enabled": true,
         "extIcon": "https://raw.githubusercontent.com/dbweb-ch/ioBroker.tesla-motors/master/admin/tesla-motors.png",
         "readme": "https://github.com/dbweb-ch/ioBroker.tesla-motors/blob/master/README.md",
         "loglevel": "info",

@@ -1,13 +1,93 @@
+![Logo](admin/tesla-motors.png)
 # ioBroker.tesla-motors
 
 ## tesla motors adapter for ioBroker
 
-Adapter to control your tesla motors car.
+This Adapter adds control over your tesla car to ioBroker.
+
+## Configuration
+1. Create a new instance of the adapter, each car needs its own instance.
+2. Select your prefered refresh Rate (See [Refresh Rate](#refreshRate))
+2. Enter your Tesla Username and Tesla Password. 
+3. Click "get Token" to request a Token and a Refresh Token from Tesla.
+4. Choose your car in the dropdown.
+
+### <a name="refreshRate"></a>Refresh Rate
+To save battery, the car goes to sleep mode afer a certain time of no activity.<br />
+Getting information from the car can only be done when the car is awake.<br />
+Users reported, that the car can consume up to 10km of Range per day if it does not go to sleep state.<br />
+To prevent from that, you can choose your desired Refresh Rate:
+* **Off** - The adapter does not wake up the car on its own. It only wakes up the car upon request (If you set a State).
+<br />If the car woke up on its own, the adapter will request car data once.
+* **Temperate** - The Adapter will wake up the car once per hour to get his state.
+* **Aggressive** - The Adapter will wake up the car once per minute.
+* **Smart** - The Adapter tries to be smart. It will observe the car sleep state. When the car wakes up,
+it assumes that someone might be driving soon and requests the state every minute for 10 minutes.
+If nothing happend (no Climate, no Driving, no Charging) the adapter stops requesting for 15 minutes
+to let the car fall asleep. In any case, it will wake up the car and get data after 12 hours.
+
+## Using the adapter
+The Adapter creates several states. The are group by their topics:
+* **chargeState** - about charging, battery and range.
+* **climateState** - Temperatures and window states.
+* **driveState** - Position and speed
+* **softwareUpdate** - Information about pending software updates
+* **vehicle** - Information about your vehicle
+
+There is a special group called **command** where you can find all commands to control your car.
+Some of them are working both ways, for example the climate state will change when 
+climate is turned off by the car. You can see this in the "Send / Recieve" column.
+
+Name | Description | **S**end / **R**ecieve
+ChargePort | Open / Close charge Port | SR
+Charging | Start / Stop Charging | SR
+Climate | Start / Stop Climate | SR
+RemoteStart | Activate / Deactivate remote start | SR
+SentryMode | Activate / Deactivate sentry mode | SR
+SetChargeLimit | Set charge Limit in % | SR
+SetTemperature | Set Target Temperature. Don't forget to turn on climate! | SR
+SpeedLimit | Activate Speed Limit | SR
+SpeedLimitValue | Speed Limit value | SR
+StartSoftwareUpdate | Start Software Update | SR
+SunRoofVent | Sun Roof Vent | SR
+ValetMode | Valet Mode | SR
+ValetPin | Valet Pin | SR
+awake | Wake up State (Set this to wake up manually) | SR
+doorLock | Locks / Opens the door | SR
+flashLights | Flash the lights | S
+honkHorn | Honk the horn | S
+openFrunk | Open Frunk (No recieve) | S
+openTrunk | Open Trunk (No recieve) | S
+seat_heater_left | Seat Heater Left level (0-3) | SR
+seat_heater_rear_center | Rear center seat heater (0-3) | SR
+seat_heater_rear_left | Rear left seat heater (0-3) | SR
+seat_heater_rear_right | Rear right seat heater (0-3) | SR
+seat_heater_right | Seat Heater Right level (0-3) | SR
+steering_wheel_heater | Steering wheel heater | SR
+windowVent | Window Vent | SR
+
+## Security &amp; Credentials
+The Tesla API uses a Token-Based security approach.<br />
+The Token will expire (currently after 45 days) but the system can retrieve a new Token using the 
+Refresh Token.<br />
+Your credentials do not have to be stored for the Adapter to work, but if you are getting problems 
+with refreshing the token this could make it more stable as the adapter can get a complete new token any time.<br />
+<aside class="warning">
+Warning:<br />
+With your Tesla credentials you can control the while car including open Windows and even driving around. 
+Keep your credentials save! <br />To reject all Tokens, change your Tesla account Password!
+</aside>
+
+## Contributors
+* dbweb-ch
 
 ## Changelog
-
+### 0.0.3
+* (dbweb-ch) control all state, added wakeup strategy
+### 0.0.2
+* (dbweb-ch) added all states
 ### 0.0.1
-* (Nick) initial release
+* (dbweb-ch) initial release
 
 ## License
 MIT License

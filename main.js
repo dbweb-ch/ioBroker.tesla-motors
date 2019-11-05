@@ -634,6 +634,11 @@ class TeslaMotors extends utils.Adapter {
             Adapter.setStateCreate('climateState.sun_roof_percent_open','Sun Roof % open', vd.climate_state.sun_roof_percent_open, 'number', true, true, '', '%');
             Adapter.setStateCreate('command.SunRoofVent','Sun Roof Vent', 'vent' === vd.climate_state.sun_roof_state, 'boolean', false);
         }
+        Adapter.setStateCreate('climateState.front_driver_window','Front driver window state', vd.vehicle_state.fd_window, 'boolean', false);
+        Adapter.setStateCreate('climateState.front_passenger_window','Front passenger window state', vd.vehicle_state.fp_window, 'boolean', false);
+        Adapter.setStateCreate('climateState.rear_driver_window','Rear driver window state', vd.vehicle_state.rd_window, 'boolean', false);
+        Adapter.setStateCreate('climateState.rear_passenger_window','Front Passenger window state', vd.vehicle_state.rp_window, 'boolean', false);
+
         if(Adapter.config.extendedData){
             Adapter.setStateCreate('climateState.wiper_blade_heater','Wiper blade heater', vd.climate_state.wiper_blade_heater, 'boolean', false);
             Adapter.setStateCreate('climateState.side_mirror_heaters','Side mirrors heaters', vd.climate_state.side_mirror_heaters, 'boolean', false);
@@ -657,10 +662,6 @@ class TeslaMotors extends utils.Adapter {
 
         Adapter.setStateCreate('vehicle.is_user_present','Is user present', vd.vehicle_state.is_user_present, 'boolean', false);
         Adapter.setStateCreate('vehicle.odometer','Odometer', vd.vehicle_state.odometer, 'number', false);
-        Adapter.setStateCreate('vehicle.front_driver_window','Front driver window state', vd.vehicle_state.fd_window, 'boolean', false);
-        Adapter.setStateCreate('vehicle.front_passenger_window','Front passenger window state', vd.vehicle_state.fp_window, 'boolean', false);
-        Adapter.setStateCreate('vehicle.rear_driver_window','Rear driver window state', vd.vehicle_state.rd_window, 'boolean', false);
-        Adapter.setStateCreate('vehicle.rear_passenger_window','Front Passenger window state', vd.vehicle_state.rp_window, 'boolean', false);
         Adapter.setStateCreate('vehicle.car_type','Car Type', vd.vehicle_config.car_type, 'boolean', false);
 
         Adapter.setStateCreate('softwareUpdate.download_percentage','Software download in %', vd.vehicle_state.software_update.download_perc, 'number', false, true, '', '%');
