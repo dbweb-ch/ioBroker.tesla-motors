@@ -39,6 +39,7 @@ Some of them are working both ways, for example the climate state will change wh
 climate is turned off by the car. You can see this in the "Send / Recieve" column.
 
 Name | Description | **S**end / **R**ecieve
+-------------- | -------------- | --------------
 ChargePort | Open / Close charge Port | SR
 Charging | Start / Stop Charging | SR
 Climate | Start / Stop Climate | SR
@@ -82,6 +83,8 @@ Keep your credentials save! <br />To reject all Tokens, change your Tesla accoun
 * dbweb-ch
 
 ## Changelog
+###0.1.0
+* (dbweb-ch) Small fixes for Beta-Version release
 ### 0.0.3
 * (dbweb-ch) control all state, added wakeup strategy
 ### 0.0.2

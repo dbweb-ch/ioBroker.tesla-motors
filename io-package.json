@@ -1,8 +1,12 @@
 {
     "common": {
         "name": "tesla-motors",
-        "version": "0.0.2",
+        "version": "0.1.0",
         "news": {
+            "0.1.0": {
+                "en": "Translations, readme and small fixes",
+                "de": "Übersetzungen, Readme und kleine Behebungen"
+            },
             "0.0.3": {
                 "en": "Implement additional wakeup-Strategies",
                 "de": "Implementiere erweiterte Aufwachstrategien"
