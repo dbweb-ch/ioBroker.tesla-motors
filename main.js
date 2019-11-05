@@ -40,7 +40,7 @@ class TeslaMotors extends utils.Adapter {
         Expires.setDate(Expires.getDate() - 10);
 
         if(Adapter.config.authToken.length === 0){
-            await this.GetNewToken();
+            await Adapter.setStateAsync('info.connection', false, true);
         }
         else if(Expires < new Date()){
             await this.RefreshToken();
@@ -60,6 +60,7 @@ class TeslaMotors extends utils.Adapter {
         // Check for Token Refresh once per day but sure on startup
         await Adapter.RefreshToken();
         setInterval(() => {
+            if(Adapter.config.authToken.length === 0) return;
             Adapter.RefreshToken();
         }, 24 * 60 * 60 * 1000);
         // Get sleeping info once per minute
