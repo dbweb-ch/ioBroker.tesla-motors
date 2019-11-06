@@ -229,12 +229,29 @@ class TeslaMotors extends utils.Adapter {
                         await tjs.closeChargePortAsync(options);
                     }
                     break;
+                case 'command.UnlockChargePort':
+                    const ChargePort = await Adapter.getStateAsync('command.ChargePort');
+                    if(ChargePort){
+                        await tjs.openChargePortAsync(options);
+                    }
+                    Adapter.setState('command.UnlockChargePort', false, true);
+                    requestDataChange = false;
+                    break;
                 case 'command.Charging':
                     if(state.val){
-                        await tjs.startChargeAsync(options);
+                        let charge = await tjs.startChargeAsync(options).catch((err)=>{
+                            Adapter.log.error('Err:'+err);
+                        });
+                        if(charge.result === false){
+                            Adapter.setState('command.Charging', false, true);
+                        }
+                        else {
+                            Adapter.setState('command.Charging', true, true);
+                        }
                     }
                     else{
                         await tjs.stopChargeAsync(options);
+                        Adapter.setState('command.Charging', false, true);
                     }
                     break;
                 case 'command.ValetMode':
@@ -607,6 +624,12 @@ class TeslaMotors extends utils.Adapter {
 
         // all other states
         Adapter.setStateCreate('chargeState.charging_state','Charging State', vd.charge_state.charging_state, 'string', false);
+        if(vd.charge_state.charging_state === 'Charging'){
+            Adapter.setState('command.Charging', true, true);
+        }
+        else if(vd.charge_state.charging_state === 'Disconnected' || vd.charge_state.charging_state === 'Stopped') {
+            Adapter.setState('command.Charging', false, true);
+        }
         Adapter.setStateCreate('chargeState.battery_level','Battery level in %', vd.charge_state.battery_level, 'number', false, true, '', '%');
         Adapter.setStateCreate('chargeState.battery_range', 'Battery Range', Adapter.m_km(vd.charge_state.battery_range), 'number', false, true, '', Adapter.distanceUnit.substr(0, Adapter.distanceUnit.indexOf('/')));
         Adapter.setStateCreate('chargeState.est_battery_range', 'Estimated Battery Range', Adapter.m_km(vd.charge_state.est_battery_range), 'number', false, true, '', Adapter.distanceUnit.substr(0, Adapter.distanceUnit.indexOf('/')));
@@ -618,7 +641,8 @@ class TeslaMotors extends utils.Adapter {
         if(Adapter.config.extendedData){
             Adapter.setStateCreate('chargeState.fast_charger_present','Fast Charger connected', vd.charge_state.fast_charger_present, 'boolean', false);
             Adapter.setStateCreate('chargeState.usable_battery_level','Usable battery level', vd.charge_state.usable_battery_level, 'number', false, true, '', '%');
-            Adapter.setStateCreate('chargeState.charge_energy_added','Energy added with Charge', vd.charge_state.charge_energy_added, 'number', false, true, '', 'kW');
+            Adapter.setStateCreate('chargeState.charge_energy_added','Energy added with Charge', vd.charge_state.charge_energy_added, 'number', false, true, '', 'kWh');
+            Adapter.setStateCreate('chargeState.charge_distance_added_rated', 'Distance added with Charge', Adapter.m_km(vd.charge_state.charge_miles_added_rated), 'number', false, true, '', Adapter.distanceUnit.substr(0, Adapter.distanceUnit.indexOf('/')));
             Adapter.setStateCreate('chargeState.charge_distance_added_rated', 'Distance added with Charge', Adapter.m_km(vd.charge_state.charge_miles_added_rated), 'number', false, true, '', Adapter.distanceUnit.substr(0, Adapter.distanceUnit.indexOf('/')));
             Adapter.setStateCreate('chargeState.charger_voltage','Charger Voltage', vd.charge_state.charger_voltage, 'number', false, true, '', 'V');
             Adapter.setStateCreate('chargeState.charger_power','Charger Power', vd.charge_state.charger_power, 'number', false, true, '', 'W');
@@ -691,6 +715,7 @@ class TeslaMotors extends utils.Adapter {
         this.setStateCreate('command.SetTemperature','Set Temperature', 21, 'number', true, true, '','C°');
         this.setStateCreate('command.SetChargeLimit','Set charge Limit', 80, 'number', true, true, '','%');
         this.setStateCreate('command.ChargePort','Open / Close charge Port', false, 'boolean');
+        this.setStateCreate('command.UnlockChargePort','Lock / unlock charge Port', false, 'boolean', true, true, 'button');
         this.setStateCreate('command.Charging','Start / Stop Charging', false, 'boolean');
         this.setStateCreate('command.ValetMode','Valet Mode', false, 'boolean');
         this.setStateCreate('command.ValetPin','Valet Pin', '????');
