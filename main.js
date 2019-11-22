@@ -117,8 +117,8 @@ class TeslaMotors extends utils.Adapter {
                     }
                     else if(Minutes > 25){
                         // Check if car is still awake. If so, request once and then go back to "let it sleep"
-                        let awakeState = await Adapter.getStateAsync('command.awake');
-                        if(awakeState && awakeState.val && awakeState.ack){
+                        let standby = await Adapter.getStateAsync('command.standby');
+                        if(standby && !standby.val && standby.ack){
                             await Adapter.GetAllInfo();
                             this.lastTimeWokeUp = new Date();
                             this.lastTimeWokeUp.setMinutes(new Date().getMinutes() - 11);
@@ -175,7 +175,7 @@ class TeslaMotors extends utils.Adapter {
             let requestDataChange = true;
             await Adapter.WakeItUp();
             switch(currentId){
-                case 'command.awake':
+                case 'command.standby':
                     if(state.val){
                         await tjs.wakeUpAsync(options);
                     }
@@ -502,7 +502,7 @@ class TeslaMotors extends utils.Adapter {
             Adapter.setState('vehicle.id_s', vehicle.id_s, true);
             Adapter.setState('vehicle.vin', vehicle.vin, true);
             Adapter.setState('vehicle.display_name', vehicle.display_name, true);
-            Adapter.setState('command.awake', vehicle.state === 'online', true);
+            Adapter.setState('command.standby', 'online' !== vehicle.state, true);
             Adapter.setState('vehicle.option_codes', vehicle.option_codes, true);
             Adapter.setState('vehicle.color', vehicle.color, true);
 
@@ -523,11 +523,11 @@ class TeslaMotors extends utils.Adapter {
             Adapter.log.warn('You tried to wake up the car, but there is currently no valid Token, please configure Adapter first!');
             return;
         }
-        // Check if not yet awake
+        // Check if in standby
         await Adapter.GetSleepingInfo();
-        let awakeState;
-        awakeState = await Adapter.getStateAsync('command.awake');
-        if(awakeState && awakeState.val && awakeState.ack) return;
+        let standby;
+        standby = await Adapter.getStateAsync('command.standby');
+        if(standby && !standby.val && standby.ack) return;
 
         await new Promise(async resolve => {
             Adapter.log.debug('Waking up the car...');
@@ -552,7 +552,7 @@ class TeslaMotors extends utils.Adapter {
                 }
                 else{
                     Adapter.log.debug("Car is Awake");
-                    Adapter.setState('command.awake', true, true);
+                    Adapter.setState('command.standby', false, true);
                     Adapter.WakeItUpRetryCount = 30;
                     resolve();
                 }
@@ -598,7 +598,7 @@ class TeslaMotors extends utils.Adapter {
         }
         // States with in and out
         Adapter.setState('command.doorLock', !vd.vehicle_state.locked, true);
-        Adapter.setState('command.awake', ('online' === vd.state), true);
+        Adapter.setState('command.standby', ('online' !== vd.state), true);
         Adapter.setState('command.Climate', vd.climate_state.is_climate_on, true);
         Adapter.setState('command.SetTemperature', vd.climate_state.driver_temp_setting, true);
         Adapter.setState('command.SetChargeLimit', vd.charge_state.charge_limit_soc, true);
@@ -743,7 +743,14 @@ class TeslaMotors extends utils.Adapter {
     async installObjects(){
         let SleepStates = [ // States that can be retrieved while car is sleeping
             // commands
-            {id: 'command.awake', name: 'Wake up State', type: 'boolean', role: 'switch', read: true, write: true}, // TODO: rename this to "standby" and role: info.standby and switch true / false!
+            {
+                id: 'command.standby',
+                name: 'Wake up State',
+                type: 'boolean',
+                role: 'info.standby',
+                read: true,
+                write: true
+            },
 
             // states read only
             {
