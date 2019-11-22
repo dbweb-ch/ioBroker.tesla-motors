@@ -84,6 +84,10 @@ Keep your credentials save! <br />To reject all Tokens, change your Tesla accoun
 * dbweb-ch
 
 ## Changelog
+### 0.1.2
+* (dbweb-ch) Added Roles, refactor states. 
+* Attention: "awake" replaced by "standby" and inverted!
+* Attention: Door lock is inverted.
 ### 0.1.1
 * (dbweb-ch) Fix for Wakeup plan "smart"
 ### 0.1.0
