@@ -96,7 +96,7 @@ class TeslaMotors extends utils.Adapter {
                  * The whole thing is 1-minute-timer-based, so we do this stuff every minute
                  */
                 setInterval(async () => {
-                    let Minutes = Math.floor((new Date().getTime() - this.lastTimeWokeUp.getTime() / 60000));
+                    let Minutes = Math.floor((new Date().getTime() - this.lastTimeWokeUp.getTime()) / 60000);
                     // if car is in use, set lastTimeWokeUp to 0
                     let shift_state = await Adapter.getStateAsync('driveState.shift_state');
                     let speed = await Adapter.getStateAsync('driveState.speed');
