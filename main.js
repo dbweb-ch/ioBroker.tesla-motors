@@ -16,7 +16,7 @@ class TeslaMotors extends utils.Adapter {
         this.on('ready', this.onReady.bind(this));
         this.on('stateChange', this.onStateChange.bind(this));
         this.on('message', this.onMessage.bind(this));
-        this.distanceUnit = 'km/h';
+        this.distanceUnit = '';
         this.WakeItUpRetryCount = 30;
         this.lastTimeWokeUp = new Date();
         this.lastWakeState = false;
@@ -29,7 +29,7 @@ class TeslaMotors extends utils.Adapter {
     async onReady(){ //
         const Adapter = this;
 
-        Adapter.initCommandObjects();
+        await Adapter.installObjects();
         this.subscribeStates('command.*');
         this.log.debug('Starting Tesla Motors');
         await Adapter.setStateAsync('info.connection', false, true);
@@ -257,7 +257,6 @@ class TeslaMotors extends utils.Adapter {
                 case 'command.ValetMode':
                     const ValetPin = await Adapter.getStateAsync('command.ValetPin');
                     if(!ValetPin){
-                        Adapter.setStateCreate('command.ValetPin','PIN for Valet Mode', '????');
                         break;
                     }
                     if(/^\d{4}$/.test(ValetPin.val)){
@@ -500,14 +499,12 @@ class TeslaMotors extends utils.Adapter {
             });
             Adapter.log.debug('vehicle Answer:' + JSON.stringify(vehicle));
 
-            Adapter.setStateCreate('vehicle.id_s', 'API Identifier of the car', vehicle.id_s, 'string', false);
-            Adapter.setStateCreate('vehicle.vin', 'VIN',vehicle.vin, 'string', false);
-            Adapter.setStateCreate('vehicle.display_name', 'Your car name', vehicle.display_name, 'string', false);
-            Adapter.setStateCreate('command.awake', 'Sleep State', vehicle.state === 'online', 'boolean', true);
-            if(Adapter.config.extendedData){
-                Adapter.setStateCreate('vehicle.option_codes','Option Codes', vehicle.option_codes, 'string', false);
-                Adapter.setStateCreate('vehicle.color', 'Your car Color', vehicle.color, 'string', false);
-            }
+            Adapter.setState('vehicle.id_s', vehicle.id_s, true);
+            Adapter.setState('vehicle.vin', vehicle.vin, true);
+            Adapter.setState('vehicle.display_name', vehicle.display_name, true);
+            Adapter.setState('command.awake', vehicle.state === 'online', true);
+            Adapter.setState('vehicle.option_codes', vehicle.option_codes, true);
+            Adapter.setState('vehicle.color', vehicle.color, true);
 
             if(vehicle.state === 'online' && !this.lastWakeState){
                 // Car was sleeping before, but woke up now. So we trigger a refresh of data
@@ -593,10 +590,14 @@ class TeslaMotors extends utils.Adapter {
         Adapter.log.debug("Vehicle Data: " + JSON.stringify(vd));
 
         // km or miles?
+        let OldDistanceUnit = Adapter.distanceUnit;
         Adapter.distanceUnit = vd.gui_settings.gui_distance_units === 'mi/hr' ? 'mi/hr' : 'km/h';
 
+        if(OldDistanceUnit !== Adapter.distanceUnit){
+            await Adapter.installDistanceObjects();
+        }
         // States with in and out
-        Adapter.setStateCreate('command.doorLock','Lock / Open the door', vd.vehicle_state.locked, 'boolean', false);
+        Adapter.setState('command.doorLock', !vd.vehicle_state.locked, true);
         Adapter.setState('command.awake', ('online' === vd.state), true);
         Adapter.setState('command.Climate', vd.climate_state.is_climate_on, true);
         Adapter.setState('command.SetTemperature', vd.climate_state.driver_temp_setting, true);
@@ -609,11 +610,6 @@ class TeslaMotors extends utils.Adapter {
         Adapter.setState('command.RemoteStart', vd.vehicle_state.remote_start, true);
         Adapter.setState('command.seat_heater_left', vd.climate_state.seat_heater_left, true);
         Adapter.setState('command.seat_heater_right', vd.climate_state.seat_heater_right, true);
-        if(vd.vehicle_config.rear_seat_heaters === 1){
-            Adapter.setStateCreate('command.seat_heater_rear_center','Rear center seat heater (0-3)', vd.climate_state.seat_heater_rear_center, 'number', true);
-            Adapter.setStateCreate('command.seat_heater_rear_left','Rear left seat heater (0-3)', vd.climate_state.seat_heater_rear_left, 'number', true);
-            Adapter.setStateCreate('command.seat_heater_rear_right','Rear right seat heater (0-3)', vd.climate_state.seat_heater_rear_right, 'number', true);
-        }
         Adapter.setState('command.steering_wheel_heater', vd.climate_state.steering_wheel_heater, true);
         if(vd.vehicle_state.fd_window || vd.vehicle_state.fp_window || vd.vehicle_state.rd_window || vd.vehicle_state.rp_window){
             Adapter.setState('command.windowVent', true, true);
@@ -623,77 +619,115 @@ class TeslaMotors extends utils.Adapter {
         }
 
         // all other states
-        Adapter.setStateCreate('chargeState.charging_state','Charging State', vd.charge_state.charging_state, 'string', false);
+        Adapter.setState('chargeState.charging_state', vd.charge_state.charging_state, true);
         if(vd.charge_state.charging_state === 'Charging'){
             Adapter.setState('command.Charging', true, true);
         }
         else if(vd.charge_state.charging_state === 'Disconnected' || vd.charge_state.charging_state === 'Stopped') {
             Adapter.setState('command.Charging', false, true);
         }
-        Adapter.setStateCreate('chargeState.battery_level','Battery level in %', vd.charge_state.battery_level, 'number', false, true, '', '%');
-        Adapter.setStateCreate('chargeState.battery_range', 'Battery Range', Adapter.m_km(vd.charge_state.battery_range), 'number', false, true, '', Adapter.distanceUnit.substr(0, Adapter.distanceUnit.indexOf('/')));
-        Adapter.setStateCreate('chargeState.est_battery_range', 'Estimated Battery Range', Adapter.m_km(vd.charge_state.est_battery_range), 'number', false, true, '', Adapter.distanceUnit.substr(0, Adapter.distanceUnit.indexOf('/')));
-        Adapter.setStateCreate('chargeState.ideal_battery_range', 'Ideal Battery Range', Adapter.m_km(vd.charge_state.ideal_battery_range), 'number', false, true, '', Adapter.distanceUnit.substr(0, Adapter.distanceUnit.indexOf('/')));
-        Adapter.setStateCreate('chargeState.scheduled_charging_start_time','Scheduled charge start Time', vd.charge_state.scheduled_charging_start_time, 'string', false);
-        Adapter.setStateCreate('chargeState.battery_heater_on','Battery Heater State', vd.charge_state.battery_heater_on, 'boolean', false);
-        Adapter.setStateCreate('chargeState.minutes_to_full_charge','Minutes to fully Charge', vd.charge_state.minutes_to_full_charge, 'number', false);
+        Adapter.setState('chargeState.battery_level', vd.charge_state.battery_level, true);
+        Adapter.setState('chargeState.battery_range', Adapter.m_km(vd.charge_state.battery_range), true);
+        Adapter.setState('chargeState.est_battery_range', Adapter.m_km(vd.charge_state.est_battery_range), true);
+        Adapter.setState('chargeState.ideal_battery_range', Adapter.m_km(vd.charge_state.ideal_battery_range), true);
+        Adapter.setState('chargeState.scheduled_charging_start_time', vd.charge_state.scheduled_charging_start_time, true);
+        Adapter.setState('chargeState.battery_heater_on', vd.charge_state.battery_heater_on, true);
+        Adapter.setState('chargeState.minutes_to_full_charge', vd.charge_state.minutes_to_full_charge, true);
+        Adapter.setState('chargeState.fast_charger_present', vd.charge_state.fast_charger_present, true);
+        Adapter.setState('chargeState.usable_battery_level', vd.charge_state.usable_battery_level, true);
+        Adapter.setState('chargeState.charge_energy_added', vd.charge_state.charge_energy_added, true);
+        Adapter.setState('chargeState.charge_distance_added_rated', Adapter.m_km(vd.charge_state.charge_miles_added_rated), true);
+        Adapter.setState('chargeState.charger_voltage', vd.charge_state.charger_voltage, true);
+        Adapter.setState('chargeState.charger_power', vd.charge_state.charger_power, true);
+        Adapter.setState('chargeState.charge_current_request', vd.charge_state.charge_current_request, true);
+        Adapter.setState('chargeState.charge_port_cold_weather_mode', vd.charge_state.charge_port_cold_weather_mode, true);
 
-        if(Adapter.config.extendedData){
-            Adapter.setStateCreate('chargeState.fast_charger_present','Fast Charger connected', vd.charge_state.fast_charger_present, 'boolean', false);
-            Adapter.setStateCreate('chargeState.usable_battery_level','Usable battery level', vd.charge_state.usable_battery_level, 'number', false, true, '', '%');
-            Adapter.setStateCreate('chargeState.charge_energy_added','Energy added with Charge', vd.charge_state.charge_energy_added, 'number', false, true, '', 'kWh');
-            Adapter.setStateCreate('chargeState.charge_distance_added_rated', 'Distance added with Charge', Adapter.m_km(vd.charge_state.charge_miles_added_rated), 'number', false, true, '', Adapter.distanceUnit.substr(0, Adapter.distanceUnit.indexOf('/')));
-            Adapter.setStateCreate('chargeState.charge_distance_added_rated', 'Distance added with Charge', Adapter.m_km(vd.charge_state.charge_miles_added_rated), 'number', false, true, '', Adapter.distanceUnit.substr(0, Adapter.distanceUnit.indexOf('/')));
-            Adapter.setStateCreate('chargeState.charger_voltage','Charger Voltage', vd.charge_state.charger_voltage, 'number', false, true, '', 'V');
-            Adapter.setStateCreate('chargeState.charger_power','Charger Power', vd.charge_state.charger_power, 'number', false, true, '', 'W');
-            Adapter.setStateCreate('chargeState.charge_current_request','Charge current requested', vd.charge_state.charge_current_request, 'number', false, true, '', 'A');
-            Adapter.setStateCreate('chargeState.charge_port_cold_weather_mode','Charge port cold weather mode', vd.charge_state.charge_port_cold_weather_mode, 'boolean', false);
+        Adapter.setState('climateState.inside_temp', vd.climate_state.inside_temp, true);
+        Adapter.setState('climateState.outside_temp', vd.climate_state.outside_temp, true);
+        Adapter.setState('climateState.max_avail_temp', vd.climate_state.max_avail_temp, true);
+        Adapter.setState('climateState.min_avail_temp', vd.climate_state.min_avail_temp, true);
+
+        Adapter.setState('climateState.sun_roof_installed', vd.vehicle_config.sun_roof_installed, true);
+
+        Adapter.setState('climateState.front_driver_window', vd.vehicle_state.fd_window, true);
+        Adapter.setState('climateState.front_passenger_window', vd.vehicle_state.fp_window, true);
+        Adapter.setState('climateState.rear_driver_window', vd.vehicle_state.rd_window, true);
+        Adapter.setState('climateState.rear_passenger_window', vd.vehicle_state.rp_window, true);
+
+        Adapter.setState('climateState.wiper_blade_heater', vd.climate_state.wiper_blade_heater, true);
+        Adapter.setState('climateState.side_mirror_heaters', vd.climate_state.side_mirror_heaters, true);
+        Adapter.setState('climateState.is_preconditioning', vd.climate_state.is_preconditioning, true);
+        Adapter.setState('climateState.smart_preconditioning', vd.climate_state.smart_preconditioning, true);
+        Adapter.setState('climateState.is_auto_conditioning_on', vd.climate_state.is_auto_conditioning_on, true);
+        Adapter.setState('climateState.battery_heater', vd.climate_state.battery_heater, true);
+
+        Adapter.setState('driveState.shift_state', vd.drive_state.shift_state, true);
+        Adapter.setState('driveState.speed', Adapter.m_km(vd.drive_state.speed), true);
+        Adapter.setState('driveState.power', vd.drive_state.power, true);
+        Adapter.setState('driveState.latitude', vd.drive_state.latitude, true);
+        Adapter.setState('driveState.longitude', vd.drive_state.longitude, true);
+        Adapter.setState('driveState.heading', vd.drive_state.heading, true);
+        Adapter.setState('driveState.gps_as_of', vd.drive_state.gps_as_of, true);
+
+
+        Adapter.setState('vehicle.is_user_present', vd.vehicle_state.is_user_present, true);
+        Adapter.setState('vehicle.odometer', vd.vehicle_state.odometer, true);
+        Adapter.setState('vehicle.car_type', vd.vehicle_config.car_type, true);
+
+        Adapter.setState('softwareUpdate.download_percentage', vd.vehicle_state.software_update.download_perc, true);
+        Adapter.setState('softwareUpdate.expected_duration_sec', vd.vehicle_state.software_update.expected_duration_sec, true);
+        Adapter.setState('softwareUpdate.install_percentage', vd.vehicle_state.software_update.install_perc, true);
+        Adapter.setState('softwareUpdate.status', vd.vehicle_state.software_update.status, true);
+        Adapter.setState('softwareUpdate.version', vd.vehicle_state.software_update.version, true);
+
+        if(!await Adapter.getStateAsync('command.SetTemperature')){
+            await Adapter.installDependantObjects(vd);
         }
 
-        Adapter.setStateCreate('climateState.inside_temp','Inside Temperature', vd.climate_state.inside_temp, 'number', false, true, '', 'C°');
-        Adapter.setStateCreate('climateState.outside_temp','Ouside Temperature', vd.climate_state.outside_temp, 'number', false, true, '', 'C°');
-        Adapter.setStateCreate('climateState.max_avail_temp','Max. available inside Temperature', vd.climate_state.max_avail_temp, 'number', false, true, '', 'C°');
-        Adapter.setStateCreate('climateState.min_avail_temp','Min. available inside Temperature', vd.climate_state.min_avail_temp, 'number', false, true, '', 'C°');
-        Adapter.setStateCreate('climateState.sun_roof_installed','Sun Roof Installed', vd.vehicle_config.sun_roof_installed, 'number', false);
+        // Late dependant
         if(vd.vehicle_config.sun_roof_installed){
-            Adapter.setStateCreate('climateState.sun_roof_percent_open','Sun Roof % open', vd.climate_state.sun_roof_percent_open, 'number', true, true, '', '%');
-            Adapter.setStateCreate('command.SunRoofVent','Sun Roof Vent', 'vent' === vd.climate_state.sun_roof_state, 'boolean', false);
+            Adapter.setState('climateState.sun_roof_percent_open', vd.climate_state.sun_roof_percent_open, true);
+            Adapter.setState('command.SunRoofVent', 'vent' === vd.climate_state.sun_roof_state, true);
         }
-        Adapter.setStateCreate('climateState.front_driver_window','Front driver window state', vd.vehicle_state.fd_window, 'boolean', false);
-        Adapter.setStateCreate('climateState.front_passenger_window','Front passenger window state', vd.vehicle_state.fp_window, 'boolean', false);
-        Adapter.setStateCreate('climateState.rear_driver_window','Rear driver window state', vd.vehicle_state.rd_window, 'boolean', false);
-        Adapter.setStateCreate('climateState.rear_passenger_window','Front Passenger window state', vd.vehicle_state.rp_window, 'boolean', false);
 
-        if(Adapter.config.extendedData){
-            Adapter.setStateCreate('climateState.wiper_blade_heater','Wiper blade heater', vd.climate_state.wiper_blade_heater, 'boolean', false);
-            Adapter.setStateCreate('climateState.side_mirror_heaters','Side mirrors heaters', vd.climate_state.side_mirror_heaters, 'boolean', false);
-            Adapter.setStateCreate('climateState.is_preconditioning','Is preconditioning', vd.climate_state.is_preconditioning, 'boolean', false);
-            Adapter.setStateCreate('climateState.smart_preconditioning','Smart preconditioning', vd.climate_state.smart_preconditioning, 'boolean', false);
-            Adapter.setStateCreate('climateState.is_auto_conditioning_on','Auto conditioning', vd.climate_state.is_auto_conditioning_on, 'boolean', false);
-            Adapter.setStateCreate('climateState.battery_heater','Battery heater', vd.climate_state.battery_heater, 'boolean', false);
+        if(vd.vehicle_config.rear_seat_heaters === 1){
+            Adapter.setState('command.seat_heater_rear_center', vd.climate_state.seat_heater_rear_center, true);
+            Adapter.setState('command.seat_heater_rear_left', vd.climate_state.seat_heater_rear_left, true);
+            Adapter.setState('command.seat_heater_rear_right', vd.climate_state.seat_heater_rear_right, true);
         }
 
 
-        Adapter.setStateCreate('driveState.shift_state','Shift State', vd.drive_state.shift_state, 'string', false);
-        Adapter.setStateCreate('driveState.speed','Speed', Adapter.m_km(vd.drive_state.speed), 'number', false, true, '', Adapter.distanceUnit);
-        Adapter.setStateCreate('driveState.power','Power', vd.drive_state.power, 'number', false);
-        Adapter.setStateCreate('driveState.latitude','Current position latitude', vd.drive_state.latitude, 'number', false);
-        Adapter.setStateCreate('driveState.longitude','Current position longitude', vd.drive_state.longitude, 'number', false);
-        Adapter.setStateCreate('driveState.heading','Car heading', vd.drive_state.heading, 'number', false, true, '', '°deg');
-        Adapter.setStateCreate('driveState.gps_as_of','Timestamp of last gps position', vd.drive_state.gps_as_of, 'number', false);
-        Adapter.setStateCreate('driveState.SpeedLimitMax','Speed limit Max settable', Adapter.m_km(vd.vehicle_state.speed_limit_mode.max_limit_mph), 'number', false, true, '', Adapter.distanceUnit);
-        Adapter.setStateCreate('driveState.SpeedLimitMin','Speed limit Min settable', Adapter.m_km(vd.vehicle_state.speed_limit_mode.min_limit_mph), 'number', false, true, '', Adapter.distanceUnit);
+        let SpeedLimitMax = await Adapter.getStateAsync('driveState.SpeedLimitMax');
+        let SpeedLimitMin = await Adapter.getStateAsync('driveState.SpeedLimitMin');
 
+        Adapter.setState('driveState.SpeedLimitMax', Adapter.m_km(vd.vehicle_state.speed_limit_mode.max_limit_mph), true);
+        Adapter.setState('driveState.SpeedLimitMin', Adapter.m_km(vd.vehicle_state.speed_limit_mode.min_limit_mph), true);
 
-        Adapter.setStateCreate('vehicle.is_user_present','Is user present', vd.vehicle_state.is_user_present, 'boolean', false);
-        Adapter.setStateCreate('vehicle.odometer','Odometer', vd.vehicle_state.odometer, 'number', false);
-        Adapter.setStateCreate('vehicle.car_type','Car Type', vd.vehicle_config.car_type, 'boolean', false);
+        if(!SpeedLimitMax
+            || !SpeedLimitMin
+            || SpeedLimitMax.val !== Adapter.m_km(vd.vehicle_state.speed_limit_mode.max_limit_mph)
+            || SpeedLimitMin.val !== Adapter.m_km(vd.vehicle_state.speed_limit_mode.min_limit_mph)
+            || OldDistanceUnit !== Adapter.distanceUnit
+        ){
+            let spmax = Adapter.m_km(vd.vehicle_state.speed_limit_mode.max_limit_mph);
+            let spmin = Adapter.m_km(vd.vehicle_state.speed_limit_mode.min_limit_mph);
 
-        Adapter.setStateCreate('softwareUpdate.download_percentage','Software download in %', vd.vehicle_state.software_update.download_perc, 'number', false, true, '', '%');
-        Adapter.setStateCreate('softwareUpdate.expected_duration_sec','Update duration expected', vd.vehicle_state.software_update.expected_duration_sec, 'number', false, true, '', 's');
-        Adapter.setStateCreate('softwareUpdate.install_percentage','Installation in %', vd.vehicle_state.software_update.install_perc, 'number', false, true, '', '%');
-        Adapter.setStateCreate('softwareUpdate.status','Update Status', vd.vehicle_state.software_update.status, 'string', false);
-        Adapter.setStateCreate('softwareUpdate.version','Update Version', vd.vehicle_state.software_update.version, 'string', false);
+            await Adapter.setObjectAsync('command.SpeedLimitValue', {
+                type: 'state',
+                common: {
+                    name: 'Limit car Speed',
+                    desc: 'Min ' + spmin + Adapter.distanceUnit + ', Max ' + spmax + Adapter.distanceUnit,
+                    type: 'number',
+                    role: 'value.speed',
+                    unit: Adapter.distanceUnit,
+                    read: true,
+                    write: true,
+                    min: spmin,
+                    max: spmax
+                },
+                native: []
+            });
+        }
     }
 
     m_km(value){
@@ -706,36 +740,753 @@ class TeslaMotors extends utils.Adapter {
         else return Math.round(value / 1.60934);
     }
 
-    initCommandObjects(){
-        this.setStateCreate('command.awake','Wake up State', false, 'boolean', true, true);
-        this.setStateCreate('command.doorLock','Door Lock', true);
-        this.setStateCreate('command.honkHorn','Honk the horn', false, 'boolean', true, true, 'button');
-        this.setStateCreate('command.flashLights','Flash the lights', false, 'boolean', true, true, 'button');
-        this.setStateCreate('command.Climate','Climate State', false, 'boolean');
-        this.setStateCreate('command.SetTemperature','Set Temperature', 21, 'number', true, true, '','C°');
-        this.setStateCreate('command.SetChargeLimit','Set charge Limit', 80, 'number', true, true, '','%');
-        this.setStateCreate('command.ChargePort','Open / Close charge Port', false, 'boolean');
-        this.setStateCreate('command.UnlockChargePort','Lock / unlock charge Port', false, 'boolean', true, true, 'button');
-        this.setStateCreate('command.Charging','Start / Stop Charging', false, 'boolean');
-        this.setStateCreate('command.ValetMode','Valet Mode', false, 'boolean');
-        this.setStateCreate('command.ValetPin','Valet Pin', '????');
-        this.setStateCreate('command.SpeedLimit','Activate Speed Limit', false, 'boolean');
-        this.setStateCreate('command.SpeedLimitValue','Speed Limit value', false, 'number', true, true, '',this.distanceUnit);
-        this.setStateCreate('command.SentryMode','Activate sentry mode', false, 'boolean');
-        this.setStateCreate('command.RemoteStart','Activate remote start', false, 'boolean');
-        this.setStateCreate('command.StartSoftwareUpdate','Start Software Update', false, 'boolean', true, true, 'button');
-        this.setStateCreate('command.seat_heater_left','Seat Heater Left', 0, 'number', true);
-        this.setStateCreate('command.seat_heater_right','Seat Heater Right', 0, 'number', true);
-        this.setStateCreate('command.steering_wheel_heater','Steering wheel heater', false, 'boolean', true);
-        this.setStateCreate('command.windowVent','Window Vent', false, 'boolean', true);
-        this.setStateCreate('command.openTrunk','Open Trunk', false, 'boolean', true, true, 'button');
-        this.setStateCreate('command.openFrunk','Open Frunk', false, 'boolean', true, true, 'button');
+    async installObjects(){
+        let SleepStates = [ // States that can be retrieved while car is sleeping
+            // commands
+            {id: 'command.awake', name: 'Wake up State', type: 'boolean', role: 'switch', read: true, write: true}, // TODO: rename this to "standby" and role: info.standby and switch true / false!
+
+            // states read only
+            {
+                id: 'vehicle.id_s',
+                name: 'API Identifier of the car',
+                type: 'string',
+                role: 'info.address',
+                read: true,
+                write: false
+            },
+            {id: 'vehicle.vin', name: 'VIN', type: 'string', role: 'info.address', read: true, write: false},
+            {
+                id: 'vehicle.display_name',
+                name: 'Your car name',
+                type: 'string',
+                role: 'info.name',
+                read: true,
+                write: false
+            },
+            {
+                id: 'vehicle.option_codes',
+                name: 'List of option codes of your car',
+                desc: 'Check them on https://tesla-api.timdorr.com/vehicle/optioncodes',
+                type: 'string',
+                role: 'text',
+                read: true,
+                write: false
+            },
+            {id: 'vehicle.color', name: 'Color of your car', type: 'string', role: 'text', read: true, write: false},
+        ];
+        let AwakeStates = [ // States that need to wake up the car to be read
+            // commands
+            {
+                id: 'command.doorLock',
+                name: 'Door Lock',
+                desc: 'true - open, false - close',
+                type: 'boolean',
+                role: 'switch.lock.door',
+                read: true,
+                write: true
+            },
+            {
+                id: 'command.honkHorn',
+                name: 'Honk Horn',
+                type: 'boolean',
+                role: 'button',
+                def: false,
+                read: false,
+                write: true
+            },
+            {
+                id: 'command.flashLights',
+                name: 'Flash Lights',
+                type: 'boolean',
+                role: 'button',
+                def: false,
+                read: false,
+                write: true
+            },
+            {
+                id: 'command.Climate',
+                name: 'Climate',
+                desc: 'Turn on climate to pre-set temperature',
+                type: 'boolean',
+                role: 'switch.power',
+                read: true,
+                write: true
+            },
+            {
+                id: 'command.SetChargeLimit',
+                name: 'Set Charge Limit',
+                type: 'number',
+                role: 'level',
+                unit: '%',
+                read: true,
+                write: true,
+                min: 50,
+                max: 100
+            },
+            {
+                id: 'command.ChargePort',
+                name: 'Open / Close charge Port',
+                type: 'boolean',
+                role: 'switch.lock',
+                read: true,
+                write: true
+            },
+            {
+                id: 'command.UnlockChargePort',
+                name: 'Unlock charge Port',
+                type: 'boolean',
+                role: 'switch.lock',
+                read: false,
+                write: true
+            },
+            {
+                id: 'command.Charging',
+                name: 'Charging state',
+                type: 'boolean',
+                role: 'switch.enable',
+                read: true,
+                write: true
+            },
+            {
+                id: 'command.ValetMode',
+                name: 'Enable valet Mode',
+                type: 'boolean',
+                role: 'switch.enable',
+                read: true,
+                write: true
+            },
+            {id: 'command.ValetPin', name: 'Pin for Valet Mode', type: 'string', def: '????', read: true, write: true},
+            {
+                id: 'command.SpeedLimit',
+                name: 'Limit max. car Speed',
+                desc: 'Set Limit with "SpeedLimitValue"',
+                type: 'boolean',
+                role: 'switch.enable',
+                read: true,
+                write: true
+            },
+            {
+                id: 'command.SentryMode',
+                name: 'Enable Sentry Mode',
+                type: 'boolean',
+                role: 'switch.enable',
+                read: true,
+                write: true
+            },
+            {
+                id: 'command.RemoteStart',
+                name: 'Enable Remote Start',
+                type: 'boolean',
+                role: 'switch.enable',
+                read: true,
+                write: true
+            },
+            {
+                id: 'command.StartSoftwareUpdate',
+                name: 'Start Software Update',
+                desc: 'Software need to be available (Download 100%)',
+                type: 'boolean',
+                role: 'button.start',
+                read: true,
+                write: true
+            },
+            {
+                id: 'command.seat_heater_left',
+                name: 'Left seat heater',
+                desc: 'Level of Seat heater (0 = off, 3 = max)',
+                type: 'number',
+                role: 'level',
+                read: true,
+                write: true,
+                min: 0,
+                max: 3
+            },
+            {
+                id: 'command.seat_heater_right',
+                name: 'Right seat heater',
+                desc: 'Level of Seat heater (0 = off, 3 = max)',
+                type: 'number',
+                role: 'level',
+                read: true,
+                write: true,
+                min: 0,
+                max: 3
+            },
+            {
+                id: 'command.steering_wheel_heater',
+                name: 'Steering wheel heater',
+                type: 'boolean',
+                role: 'switch.enable',
+                read: true,
+                write: true
+            },
+            {
+                id: 'command.windowVent',
+                name: 'Vent Window',
+                desc: 'Hint: Can also be used to close all windows',
+                type: 'boolean',
+                role: 'switch.lock.window',
+                read: true,
+                write: true
+            },
+            {
+                id: 'command.openTrunk',
+                name: 'Open trunk',
+                type: 'boolean',
+                role: 'button.open.door',
+                read: true,
+                write: true
+            },
+            {
+                id: 'command.openFrunk',
+                name: 'Open frunk (front trunk)',
+                type: 'boolean',
+                role: 'button.open.door',
+                read: true,
+                write: true
+            },
+
+            // states read only
+            {
+                id: 'chargeState.charging_state',
+                name: 'Charging State',
+                type: 'string',
+                role: 'state',
+                read: true,
+                write: false
+            },
+            {
+                id: 'chargeState.battery_level',
+                name: 'Battery level',
+                type: 'number',
+                role: 'value.battery',
+                unit: '%',
+                read: true,
+                write: false,
+                min: 0,
+                max: 100
+            },
+
+
+            {
+                id: 'chargeState.scheduled_charging_start_time',
+                name: 'Scheduled charge start Time',
+                desc: 'Current Format: yyyy-MM-ddTHH:mm:ss (But can be changed by Tesla anytime)',
+                type: 'string',
+                role: 'date.start',
+                read: true,
+                write: false
+            },
+            {
+                id: 'chargeState.battery_heater_on',
+                name: 'Battery heater State',
+                type: 'boolean',
+                role: 'indicator',
+                read: true,
+                write: false
+            },
+            {
+                id: 'chargeState.minutes_to_full_charge',
+                name: 'Minutes to fully Charge',
+                type: 'number',
+                role: 'value',
+                read: true,
+                write: false
+            },
+            {
+                id: 'chargeState.fast_charger_present',
+                name: 'Fast Charger connected',
+                type: 'boolean',
+                role: 'indicator',
+                read: true,
+                write: false
+            },
+            {
+                id: 'chargeState.usable_battery_level',
+                name: 'Usable battery level',
+                type: 'number',
+                role: 'value.battery',
+                unit: '%',
+                read: true,
+                write: false,
+                min: 0,
+                max: 100
+            },
+            {
+                id: 'chargeState.charge_energy_added',
+                name: 'Energy added with last Charge',
+                type: 'number',
+                role: 'value',
+                unit: 'kWh',
+                read: true,
+                write: false
+            },
+            {
+                id: 'chargeState.charger_voltage',
+                name: 'Charger Voltage',
+                type: 'number',
+                role: 'value.voltage',
+                unit: 'V',
+                read: true,
+                write: false
+            },
+            {
+                id: 'chargeState.charger_power',
+                name: 'Charger Power',
+                type: 'number',
+                role: 'value',
+                unit: 'W',
+                read: true,
+                write: false
+            },
+            {
+                id: 'chargeState.charge_current_request',
+                name: 'Charge current requested',
+                type: 'number',
+                role: 'value.current',
+                unit: 'A',
+                read: true,
+                write: false
+            },
+            {
+                id: 'chargeState.charge_port_cold_weather_mode',
+                name: 'Charge port cold weather mode',
+                type: 'boolean',
+                role: 'indicator',
+                read: true,
+                write: false
+            },
+
+
+            {
+                id: 'climateState.inside_temp',
+                name: 'Inside Temperature',
+                type: 'number',
+                role: 'value.temperature',
+                unit: '°C',
+                read: true,
+                write: false
+            },
+            {
+                id: 'climateState.outside_temp',
+                name: 'Ouside Temperature',
+                type: 'number',
+                role: 'value.temperature',
+                unit: '°C',
+                read: true,
+                write: false
+            },
+            {
+                id: 'climateState.max_avail_temp',
+                name: 'Max. available inside Temperature',
+                type: 'number',
+                role: 'value.temperature',
+                unit: '°C',
+                read: true,
+                write: false
+            },
+            {
+                id: 'climateState.min_avail_temp',
+                name: 'Min. available inside Temperature',
+                type: 'number',
+                role: 'value.temperature',
+                unit: '°C',
+                read: true,
+                write: false
+            },
+            {
+                id: 'climateState.sun_roof_installed',
+                name: 'Sun Roof Installed',
+                type: 'boolean',
+                role: 'indicator',
+                read: true,
+                write: false
+            },
+
+            {
+                id: 'climateState.front_driver_window',
+                name: 'Front driver window state',
+                type: 'boolean',
+                role: 'sensor.window',
+                read: true,
+                write: false
+            },
+            {
+                id: 'climateState.front_passenger_window',
+                name: 'Front passenger window state',
+                type: 'boolean',
+                role: 'sensor.window',
+                read: true,
+                write: false
+            },
+            {
+                id: 'climateState.rear_driver_window',
+                name: 'Rear driver window state',
+                type: 'boolean',
+                role: 'sensor.window',
+                read: true,
+                write: false
+            },
+            {
+                id: 'climateState.rear_passenger_window',
+                name: 'Front Passenger window state',
+                type: 'boolean',
+                role: 'sensor.window',
+                read: true,
+                write: false
+            },
+
+
+            {
+                id: 'climateState.wiper_blade_heater',
+                name: 'Wiper blade heater',
+                type: 'boolean',
+                role: 'indicator',
+                read: true,
+                write: false
+            },
+            {
+                id: 'climateState.side_mirror_heaters',
+                name: 'Side mirrors heaters',
+                type: 'boolean',
+                role: 'indicator',
+                read: true,
+                write: false
+            },
+            {
+                id: 'climateState.is_preconditioning',
+                name: 'Is preconditioning',
+                type: 'boolean',
+                role: 'indicator',
+                read: true,
+                write: false
+            },
+            {
+                id: 'climateState.smart_preconditioning',
+                name: 'Smart preconditioning',
+                type: 'boolean',
+                role: 'indicator',
+                read: true,
+                write: false
+            },
+            {
+                id: 'climateState.is_auto_conditioning_on',
+                name: 'Auto conditioning',
+                type: 'boolean',
+                role: 'indicator',
+                read: true,
+                write: false
+            },
+            {
+                id: 'climateState.battery_heater',
+                name: 'Battery heater',
+                type: 'boolean',
+                role: 'indicator',
+                read: true,
+                write: false
+            },
+
+            {
+                id: 'driveState.shift_state',
+                name: 'Shift State',
+                type: 'string',
+                role: 'indicator',
+                read: true,
+                write: false
+            },
+
+            {
+                id: 'driveState.power',
+                name: 'Power',
+                type: 'number',
+                role: 'value.power.consumption',
+                unit: 'Wh',
+                read: true,
+                write: false
+            },
+            {
+                id: 'driveState.latitude',
+                name: 'Current position latitude',
+                type: 'number',
+                role: 'value.gps.latitude',
+                read: true,
+                write: false
+            },
+            {
+                id: 'driveState.longitude',
+                name: 'Current position longitude',
+                type: 'number',
+                role: 'value.gps.longitude',
+                read: true,
+                write: false
+            },
+            {
+                id: 'driveState.heading',
+                name: 'Car heading',
+                type: 'number',
+                role: 'value.direction',
+                unit: '°deg',
+                read: true,
+                write: false,
+                min: 0,
+                max: 360
+            },
+            {
+                id: 'driveState.gps_as_of',
+                name: 'Timestamp of last gps position',
+                type: 'number',
+                role: 'value.time',
+                read: true,
+                write: false
+            },
+            {
+                id: 'vehicle.is_user_present',
+                name: 'Is user present',
+                type: 'boolean',
+                role: 'indicator',
+                read: true,
+                write: false
+            },
+            {id: 'vehicle.car_type', name: 'Car Type', type: 'string', role: 'text', read: true, write: false},
+
+            {
+                id: 'softwareUpdate.download_percentage',
+                name: 'Software download in %',
+                type: 'number',
+                role: 'level',
+                unit: '%',
+                read: true,
+                write: false,
+                min: 0,
+                max: 100
+            },
+            {
+                id: 'softwareUpdate.expected_duration_sec',
+                name: 'Update expected duration',
+                type: 'number',
+                role: 'value',
+                unit: 'sec',
+                read: true,
+                write: false
+            },
+            {
+                id: 'softwareUpdate.install_percentage',
+                name: 'Installation in %',
+                type: 'number',
+                role: 'level',
+                unit: '%',
+                read: true,
+                write: false,
+                min: 0,
+                max: 100
+            },
+            {
+                id: 'softwareUpdate.status',
+                name: 'Update Status',
+                type: 'string',
+                role: 'state',
+                read: true,
+                write: false
+            },
+            {
+                id: 'softwareUpdate.version',
+                name: 'Update Version',
+                type: 'string',
+                role: 'text',
+                read: true,
+                write: false
+            },
+        ];
+
+        await this.createObjects(SleepStates);
+        await this.createObjects(AwakeStates);
     }
+
+    async installDistanceObjects(){
+        const Adapter = this;
+        let AwakeDependantStates = [
+            // States that need information about Distance format
+            {
+                id: 'driveState.SpeedLimitMax',
+                name: 'Speed limit Max settable',
+                type: 'number',
+                role: 'value.speed',
+                unit: Adapter.distanceUnit,
+                read: true,
+                write: false
+            },
+            {
+                id: 'driveState.SpeedLimitMin',
+                name: 'Speed limit Min settable',
+                type: 'number',
+                role: 'value.speed',
+                unit: Adapter.distanceUnit,
+                read: true,
+                write: false
+            },
+            {
+                id: 'chargeState.battery_range',
+                name: 'Battery Range',
+                type: 'number',
+                role: 'value.distance',
+                unit: Adapter.distanceUnit.substr(0, Adapter.distanceUnit.indexOf('/')),
+                read: true,
+                write: false
+            },
+            {
+                id: 'chargeState.est_battery_range',
+                name: 'Estimated Battery Range',
+                type: 'number',
+                role: 'value.distance',
+                unit: Adapter.distanceUnit.substr(0, Adapter.distanceUnit.indexOf('/')),
+                read: true,
+                write: false
+            },
+            {
+                id: 'chargeState.ideal_battery_range',
+                name: 'Ideal Battery Range',
+                type: 'number',
+                role: 'value.distance',
+                unit: Adapter.distanceUnit.substr(0, Adapter.distanceUnit.indexOf('/')),
+                read: true,
+                write: false
+            },
+            {
+                id: 'chargeState.charge_distance_added_rated',
+                name: 'Distance added with Charge',
+                type: 'number',
+                role: 'value.distance',
+                unit: Adapter.distanceUnit.substr(0, Adapter.distanceUnit.indexOf('/')),
+                read: true,
+                write: false
+            },
+
+            {
+                id: 'driveState.speed',
+                name: 'Speed',
+                type: 'number',
+                role: 'value.speed',
+                unit: Adapter.distanceUnit,
+                read: true,
+                write: false
+            },
+            {
+                id: 'vehicle.odometer',
+                name: 'Odometer',
+                type: 'number',
+                role: 'value.distance',
+                unit: Adapter.distanceUnit.substr(0, Adapter.distanceUnit.indexOf('/')),
+                read: true,
+                write: false
+            }
+        ];
+        await this.overwriteObjects(AwakeDependantStates);
+    }
+
+    async installDependantObjects(vd){
+        await this.overwriteObjects([{
+            id: 'command.SetTemperature',
+            name: 'Set Temperature',
+            desc: 'Sets temperature of driver and passenger',
+            type: 'number',
+            role: 'value.temperature',
+            unit: '°C',
+            read: true,
+            write: true,
+            min: vd.climate_state.min_avail_temp,
+            max: vd.climate_state.max_avail_temp
+        }]);
+
+        if(vd.vehicle_config.rear_seat_heaters === 1){
+            await this.overwriteObjects([
+                {
+                    id: 'command.seat_heater_rear_center',
+                    name: 'Rear center seat heater',
+                    desc: 'Level of Seat heater (0 = off, 3 = max)',
+                    type: 'number',
+                    role: 'level',
+                    read: true,
+                    write: true,
+                    min: 0,
+                    max: 3
+                },
+                {
+                    id: 'command.seat_heater_rear_left',
+                    name: 'Rear left seat heater',
+                    desc: 'Level of Seat heater (0 = off, 3 = max)',
+                    type: 'number',
+                    role: 'level',
+                    read: true,
+                    write: true,
+                    min: 0,
+                    max: 3
+                },
+                {
+                    id: 'command.seat_heater_rear_right',
+                    name: 'Rear right seat heater',
+                    desc: 'Level of Seat heater (0 = off, 3 = max)',
+                    type: 'number',
+                    role: 'level',
+                    read: true,
+                    write: true,
+                    min: 0,
+                    max: 3
+                },
+            ]);
+        }
+        if(vd.vehicle_config.sun_roof_installed){
+            await this.overwriteObjects([{
+                id: 'command.SunRoofVent',
+                name: 'Sun Roof Vent',
+                type: 'boolean',
+                role: 'switch.lock',
+                read: true,
+                write: true
+            }]);
+        }
+
+        if(vd.vehicle_config.sun_roof_installed){
+            await this.overwriteObjects([{
+                id: 'climateState.sun_roof_percent_open',
+                name: 'Sun Roof % open',
+                type: 'number',
+                role: 'level.tilt',
+                unit: '%',
+                read: true,
+                write: false
+            }]);
+        }
+    }
+
+    async createObjects(objects){
+        await objects.forEach(async (object) => {
+            let id = object.id;
+            delete object.id;
+            this.setObjectNotExistsAsync(id, {
+                type: 'state',
+                common: object,
+                native: []
+            });
+        })
+    }
+
+    async overwriteObjects(objects){
+        await objects.forEach(async (object) => {
+            let id = object.id;
+            delete object.id;
+            this.setObjectAsync(id, {
+                type: 'state',
+                common: object,
+                native: []
+            });
+        })
+    }
+
 
     /**
      * type "number" | "string" | "boolean" | "array" | "object" | "mixed" | "file"
      */
-    setStateCreate(id, name, state, type = 'string', write = true, read = true, role = '', unit = ''){
+    setStateCreate(id, name, role, state, type = 'string', write = true, read = true, unit = ''){
         this.setObjectNotExists(id, {
             type: 'state',
             common: {name: name, type: type, role: role, unit: unit, read: read, write: write},

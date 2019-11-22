@@ -59,7 +59,6 @@
                 $('#saveCredentials').prop('checked',false);
             }
             $('#wakeupPlan').on('change', () => onChange());
-            $('#extendedData').on('change', () => onChange());
             $('#vehicle_id_s').on('change', () => onChange());
 
             $('#teslaUsername, #teslaPassword').on('change keyup', () => {
@@ -202,12 +201,6 @@
             <select id="vehicle_id_s" class="value">
             </select>
             <label class="translate" for="vehicle_id_s">Select your Car</label>
-        </div>
-    </div>
-    <div class="row">
-        <div class="input-field col s12 m4">
-            <input id="extendedData" type="checkbox" class="value"/>
-            <label class="translate" for="extendedData">Receive extended States</label>
         </div>
     </div>
 </div>

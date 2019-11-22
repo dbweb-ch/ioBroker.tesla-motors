@@ -84,7 +84,6 @@
         "refreshToken": "",
         "tokenExpire": 0,
         "wakeupPlan": "smart",
-        "extendedData": false,
         "vehicles": [],
         "vehicle_id_s": ""
     },
