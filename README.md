@@ -84,6 +84,8 @@ Keep your credentials save! <br />To reject all Tokens, change your Tesla accoun
 * dbweb-ch
 
 ## Changelog
+### 0.1.1
+* (dbweb-ch) Fix for Wakeup plan "smart"
 ### 0.1.0
 * (dbweb-ch) Small fixes for Beta-Version release
 ### 0.0.3
