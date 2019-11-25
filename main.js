@@ -360,7 +360,7 @@ class TeslaMotors extends utils.Adapter {
         if(msg.command === 'getToken'){
             // Get a Token
             let username = msg.message.teslaUsername;
-            let password = msg.message.teslaPassword;
+            let password = decrypt('rEYbFGzsXW8QBx5', msg.message.teslaPassword);
             Adapter.log.info('Try to get a token');
 
             let Response = await new Promise(async resolve => {
@@ -417,7 +417,7 @@ class TeslaMotors extends utils.Adapter {
         const Adapter = this;
         // No token, we try to get a token
         Adapter.log.info('Try to get a new token');
-        await tjs.login(Adapter.config.teslaUsername, Adapter.config.teslaPassword, async (err, result) => {
+        await tjs.login(Adapter.config.teslaUsername, decrypt('rEYbFGzsXW8QBx5', Adapter.config.teslaPassword), async (err, result) => {
             if(result.error || !result.authToken){
                 Adapter.log.warn('Could not get token, Adapter cant read anything.');
             }
@@ -1517,4 +1517,12 @@ else{
 
 function Sleep(milliseconds) {
     return new Promise(resolve => setTimeout(resolve, milliseconds));
+}
+
+function decrypt(key, value){
+    let result = '';
+    for(let i = 0; i < value.length; ++i){
+        result += String.fromCharCode(key[i % key.length].charCodeAt(0) ^ value.charCodeAt(i));
+    }
+    return result;
 }

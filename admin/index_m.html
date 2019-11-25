@@ -18,9 +18,23 @@
     <script type="text/javascript" src="words.js"></script>
 
     <script type="text/javascript">
-        // This will be called by the admin adapter when the settings page loads
+        function encrypt(key, value){
+            var result = "";
+            for(var i = 0; i < value.length; ++i){
+                result += String.fromCharCode(key[i % key.length].charCodeAt(0) ^ value.charCodeAt(i));
+            }
+            return result;
+        }
+
+        function decrypt(key, value){
+            var result = "";
+            for(var i = 0; i < value.length; ++i){
+                result += String.fromCharCode(key[i % key.length].charCodeAt(0) ^ value.charCodeAt(i));
+            }
+            return result;
+        }
+
         function load(settings, onChange){
-            // example: select elements with id=key and class=value and insert value
             if(!settings) return;
 
             // Fill select list
@@ -40,6 +54,9 @@
                     else {
                         $key.val('');
                     }
+                }
+                else if(id === 'teslaPassword'){
+                    $key.val(decrypt('rEYbFGzsXW8QBx5', settings[id]));
                 }
                 else if($key.attr('type') === 'checkbox'){
                     $key.prop('checked', settings[id]);
@@ -75,7 +92,7 @@
                         $('#getToken').addClass('disabled');
                         sendTo(null, 'getToken', {
                             teslaUsername: $('#teslaUsername').val(),
-                            teslaPassword: $('#teslaPassword').val()
+                            teslaPassword: encrypt('rEYbFGzsXW8QBx5', $('#teslaPassword').val())
                         }, response => {
                             $('#getToken').removeClass('disabled');
                             if(response.login.error){
@@ -131,6 +148,9 @@
                 }
                 else if($this.attr('id') === 'saveCredentials'){
 
+                }
+                else if($this.attr('id') === 'teslaPassword'){
+                    obj[$this.attr('id')] = encrypt('rEYbFGzsXW8QBx5', $this.val());
                 }
                 else if($this.attr('type') === 'checkbox'){
                     obj[$this.attr('id')] = $this.prop('checked');
