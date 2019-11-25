@@ -64,16 +64,7 @@
         "type": "general",
         "compact": true,
         "materialize": true,
-        "materializeTab": true,
-        "adminTab": {
-            "singleton": false,
-            "name": {
-                "en": "Tesla Motors",
-                "de": "Tesla Motors"
-            },
-            "link": "",
-            "fa-icon": "info"
-        },
+        "materializeTab": false,
         "supportCustoms": false,
         "dependencies": [
             {
