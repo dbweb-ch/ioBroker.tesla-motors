@@ -1,8 +1,12 @@
 {
     "common": {
         "name": "tesla-motors",
-        "version": "0.1.2",
+        "version": "0.2.0",
         "news": {
+            "0.2.0": {
+                "en": "Included testing, encrypt password",
+                "de": "Testing hinzugefügt, passwort verschlüsselt speichern"
+            },
             "0.1.2": {
                 "en": "Add Roles, refactor states",
                 "de": "Rollen hinzugefügt und States überarbeitet"
