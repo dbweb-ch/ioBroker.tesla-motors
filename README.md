@@ -54,7 +54,7 @@ StartSoftwareUpdate | Start Software Update | SR
 SunRoofVent | Sun Roof Vent | SR
 ValetMode | Valet Mode | SR
 ValetPin | Valet Pin | SR
-awake | Wake up State (Set this to wake up manually) | SR
+standby | If car is in standby (Set this to wake up manually) | SR
 doorLock | Locks / Opens the door | SR
 flashLights | Flash the lights | S
 honkHorn | Honk the horn | S
