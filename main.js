@@ -37,8 +37,6 @@ class TeslaMotors extends utils.Adapter {
         const Adapter = this;
         await Adapter.setStateAsync('info.connection', false, true);
 
-        await Adapter.installObjects();
-
         this.log.debug('All Objects installed, setting up tasks now');
 
         this.subscribeStates('command.*');
@@ -114,9 +112,9 @@ class TeslaMotors extends utils.Adapter {
             case 'smart':
             default:
                 /* Theory:
-                 * When car wakes up, there is someting happening.
+                 * When car wakes up, there is something happening.
                  * So if car woke up, get data every minute for 10 minutes.
-                 * If nothing happend (Car start, Climate start, Charging) leave car alone to let him fall asleep.
+                 * If nothing happened (Car start, Climate start, Charging) leave car alone to let him fall asleep.
                  * If not went to sleep, request data and wait again 15 minutes.
                  * But: If last wake up is more than 12 hours ago, request state!
                  *
@@ -139,7 +137,7 @@ class TeslaMotors extends utils.Adapter {
                     await Adapter.GetAllInfo();
                 }
                 else if(Minutes > 10 && Minutes <= 25){
-                    // Dont do anything, try to let the car sleep...
+                    // Don't do anything, try to let the car sleep...
                 }
                 else if(Minutes > 25){
                     // Check if car is still awake. If so, request once and then go back to "let it sleep"
@@ -736,7 +734,8 @@ class TeslaMotors extends utils.Adapter {
             let spmax = Adapter.m_km(vd.vehicle_state.speed_limit_mode.max_limit_mph);
             let spmin = Adapter.m_km(vd.vehicle_state.speed_limit_mode.min_limit_mph);
 
-            await Adapter.setObjectAsync('command.SpeedLimitValue', {
+
+            await Adapter.extendObjectAsync('command.SpeedLimitValue', {
                 type: 'state',
                 common: {
                     name: 'Limit car Speed',
@@ -744,7 +743,6 @@ class TeslaMotors extends utils.Adapter {
                     type: 'number',
                     role: 'value.speed',
                     unit: Adapter.distanceUnit,
-                    read: true,
                     write: true,
                     min: spmin,
                     max: spmax
@@ -764,685 +762,61 @@ class TeslaMotors extends utils.Adapter {
         else return Math.round(value / 1.60934);
     }
 
-    async installObjects(){
-        let SleepStates = [ // States that can be retrieved while car is sleeping
-            // commands
-            {
-                id: 'command.standby',
-                name: 'Wake up State',
-                type: 'boolean',
-                role: 'info.standby',
-                read: true,
-                write: true
-            },
-
-            // states read only
-            {
-                id: 'vehicle.id_s',
-                name: 'API Identifier of the car',
-                type: 'string',
-                role: 'info.address',
-                read: true,
-                write: false
-            },
-            {id: 'vehicle.vin', name: 'VIN', type: 'string', role: 'info.address', read: true, write: false},
-            {
-                id: 'vehicle.display_name',
-                name: 'Your car name',
-                type: 'string',
-                role: 'info.name',
-                read: true,
-                write: false
-            },
-            {
-                id: 'vehicle.option_codes',
-                name: 'List of option codes of your car',
-                desc: 'Check them on https://tesla-api.timdorr.com/vehicle/optioncodes',
-                type: 'string',
-                role: 'text',
-                read: true,
-                write: false
-            },
-            {id: 'vehicle.color', name: 'Color of your car', type: 'string', role: 'text', read: true, write: false},
-        ];
-        let AwakeStates = [ // States that need to wake up the car to be read
-            // commands
-            {
-                id: 'command.doorLock',
-                name: 'Door Lock',
-                desc: 'true - open, false - close',
-                type: 'boolean',
-                role: 'switch.lock.door',
-                read: true,
-                write: true
-            },
-            {
-                id: 'command.honkHorn',
-                name: 'Honk Horn',
-                type: 'boolean',
-                role: 'button',
-                def: false,
-                read: false,
-                write: true
-            },
-            {
-                id: 'command.flashLights',
-                name: 'Flash Lights',
-                type: 'boolean',
-                role: 'button',
-                def: false,
-                read: false,
-                write: true
-            },
-            {
-                id: 'command.Climate',
-                name: 'Climate',
-                desc: 'Turn on climate to pre-set temperature',
-                type: 'boolean',
-                role: 'switch.power',
-                read: true,
-                write: true
-            },
-            {
-                id: 'command.SetChargeLimit',
-                name: 'Set Charge Limit',
-                type: 'number',
-                role: 'level',
-                unit: '%',
-                read: true,
-                write: true,
-                min: 50,
-                max: 100
-            },
-            {
-                id: 'command.ChargePort',
-                name: 'Open / Close charge Port',
-                type: 'boolean',
-                role: 'switch.lock',
-                read: true,
-                write: true
-            },
-            {
-                id: 'command.UnlockChargePort',
-                name: 'Unlock charge Port',
-                type: 'boolean',
-                role: 'switch.lock',
-                read: false,
-                write: true
-            },
-            {
-                id: 'command.Charging',
-                name: 'Charging state',
-                type: 'boolean',
-                role: 'switch.enable',
-                read: true,
-                write: true
-            },
-            {
-                id: 'command.ValetMode',
-                name: 'Enable valet Mode',
-                type: 'boolean',
-                role: 'switch.enable',
-                read: true,
-                write: true
-            },
-            {id: 'command.ValetPin', name: 'Pin for Valet Mode', type: 'string', def: '????', read: true, write: true},
-            {
-                id: 'command.SpeedLimit',
-                name: 'Limit max. car Speed',
-                desc: 'Set Limit with "SpeedLimitValue"',
-                type: 'boolean',
-                role: 'switch.enable',
-                read: true,
-                write: true
-            },
-            {
-                id: 'command.SentryMode',
-                name: 'Enable Sentry Mode',
-                type: 'boolean',
-                role: 'switch.enable',
-                read: true,
-                write: true
-            },
-            {
-                id: 'command.RemoteStart',
-                name: 'Enable Remote Start',
-                type: 'boolean',
-                role: 'switch.enable',
-                read: true,
-                write: true
-            },
-            {
-                id: 'command.StartSoftwareUpdate',
-                name: 'Start Software Update',
-                desc: 'Software need to be available (Download 100%)',
-                type: 'boolean',
-                role: 'button.start',
-                read: true,
-                write: true
-            },
-            {
-                id: 'command.seat_heater_left',
-                name: 'Left seat heater',
-                desc: 'Level of Seat heater (0 = off, 3 = max)',
-                type: 'number',
-                role: 'level',
-                read: true,
-                write: true,
-                min: 0,
-                max: 3
-            },
-            {
-                id: 'command.seat_heater_right',
-                name: 'Right seat heater',
-                desc: 'Level of Seat heater (0 = off, 3 = max)',
-                type: 'number',
-                role: 'level',
-                read: true,
-                write: true,
-                min: 0,
-                max: 3
-            },
-            {
-                id: 'command.steering_wheel_heater',
-                name: 'Steering wheel heater',
-                type: 'boolean',
-                role: 'switch.enable',
-                read: true,
-                write: true
-            },
-            {
-                id: 'command.windowVent',
-                name: 'Vent Window',
-                desc: 'Hint: Can also be used to close all windows',
-                type: 'boolean',
-                role: 'switch.lock.window',
-                read: true,
-                write: true
-            },
-            {
-                id: 'command.openTrunk',
-                name: 'Open trunk',
-                type: 'boolean',
-                role: 'button.open.door',
-                read: true,
-                write: true
-            },
-            {
-                id: 'command.openFrunk',
-                name: 'Open frunk (front trunk)',
-                type: 'boolean',
-                role: 'button.open.door',
-                read: true,
-                write: true
-            },
-
-            // states read only
-            {
-                id: 'chargeState.charging_state',
-                name: 'Charging State',
-                type: 'string',
-                role: 'state',
-                read: true,
-                write: false
-            },
-            {
-                id: 'chargeState.battery_level',
-                name: 'Battery level',
-                type: 'number',
-                role: 'value.battery',
-                unit: '%',
-                read: true,
-                write: false,
-                min: 0,
-                max: 100
-            },
-
-
-            {
-                id: 'chargeState.scheduled_charging_start_time',
-                name: 'Scheduled charge start Time',
-                desc: 'Current Format: yyyy-MM-ddTHH:mm:ss (But can be changed by Tesla anytime)',
-                type: 'string',
-                role: 'date.start',
-                read: true,
-                write: false
-            },
-            {
-                id: 'chargeState.battery_heater_on',
-                name: 'Battery heater State',
-                type: 'boolean',
-                role: 'indicator',
-                read: true,
-                write: false
-            },
-            {
-                id: 'chargeState.minutes_to_full_charge',
-                name: 'Minutes to fully Charge',
-                type: 'number',
-                role: 'value',
-                read: true,
-                write: false
-            },
-            {
-                id: 'chargeState.fast_charger_present',
-                name: 'Fast Charger connected',
-                type: 'boolean',
-                role: 'indicator',
-                read: true,
-                write: false
-            },
-            {
-                id: 'chargeState.usable_battery_level',
-                name: 'Usable battery level',
-                type: 'number',
-                role: 'value.battery',
-                unit: '%',
-                read: true,
-                write: false,
-                min: 0,
-                max: 100
-            },
-            {
-                id: 'chargeState.charge_energy_added',
-                name: 'Energy added with last Charge',
-                type: 'number',
-                role: 'value',
-                unit: 'kWh',
-                read: true,
-                write: false
-            },
-            {
-                id: 'chargeState.charger_voltage',
-                name: 'Charger Voltage',
-                type: 'number',
-                role: 'value.voltage',
-                unit: 'V',
-                read: true,
-                write: false
-            },
-            {
-                id: 'chargeState.charger_power',
-                name: 'Charger Power',
-                type: 'number',
-                role: 'value',
-                unit: 'W',
-                read: true,
-                write: false
-            },
-            {
-                id: 'chargeState.charge_current_request',
-                name: 'Charge current requested',
-                type: 'number',
-                role: 'value.current',
-                unit: 'A',
-                read: true,
-                write: false
-            },
-            {
-                id: 'chargeState.charge_port_cold_weather_mode',
-                name: 'Charge port cold weather mode',
-                type: 'boolean',
-                role: 'indicator',
-                read: true,
-                write: false
-            },
-
-
-            {
-                id: 'climateState.inside_temp',
-                name: 'Inside Temperature',
-                type: 'number',
-                role: 'value.temperature',
-                unit: '°C',
-                read: true,
-                write: false
-            },
-            {
-                id: 'climateState.outside_temp',
-                name: 'Ouside Temperature',
-                type: 'number',
-                role: 'value.temperature',
-                unit: '°C',
-                read: true,
-                write: false
-            },
-            {
-                id: 'climateState.max_avail_temp',
-                name: 'Max. available inside Temperature',
-                type: 'number',
-                role: 'value.temperature',
-                unit: '°C',
-                read: true,
-                write: false
-            },
-            {
-                id: 'climateState.min_avail_temp',
-                name: 'Min. available inside Temperature',
-                type: 'number',
-                role: 'value.temperature',
-                unit: '°C',
-                read: true,
-                write: false
-            },
-            {
-                id: 'climateState.sun_roof_installed',
-                name: 'Sun Roof Installed',
-                type: 'boolean',
-                role: 'indicator',
-                read: true,
-                write: false
-            },
-
-            {
-                id: 'climateState.front_driver_window',
-                name: 'Front driver window state',
-                type: 'boolean',
-                role: 'sensor.window',
-                read: true,
-                write: false
-            },
-            {
-                id: 'climateState.front_passenger_window',
-                name: 'Front passenger window state',
-                type: 'boolean',
-                role: 'sensor.window',
-                read: true,
-                write: false
-            },
-            {
-                id: 'climateState.rear_driver_window',
-                name: 'Rear driver window state',
-                type: 'boolean',
-                role: 'sensor.window',
-                read: true,
-                write: false
-            },
-            {
-                id: 'climateState.rear_passenger_window',
-                name: 'Front Passenger window state',
-                type: 'boolean',
-                role: 'sensor.window',
-                read: true,
-                write: false
-            },
-
-
-            {
-                id: 'climateState.wiper_blade_heater',
-                name: 'Wiper blade heater',
-                type: 'boolean',
-                role: 'indicator',
-                read: true,
-                write: false
-            },
-            {
-                id: 'climateState.side_mirror_heaters',
-                name: 'Side mirrors heaters',
-                type: 'boolean',
-                role: 'indicator',
-                read: true,
-                write: false
-            },
-            {
-                id: 'climateState.is_preconditioning',
-                name: 'Is preconditioning',
-                type: 'boolean',
-                role: 'indicator',
-                read: true,
-                write: false
-            },
-            {
-                id: 'climateState.smart_preconditioning',
-                name: 'Smart preconditioning',
-                type: 'boolean',
-                role: 'indicator',
-                read: true,
-                write: false
-            },
-            {
-                id: 'climateState.is_auto_conditioning_on',
-                name: 'Auto conditioning',
-                type: 'boolean',
-                role: 'indicator',
-                read: true,
-                write: false
-            },
-            {
-                id: 'climateState.battery_heater',
-                name: 'Battery heater',
-                type: 'boolean',
-                role: 'indicator',
-                read: true,
-                write: false
-            },
-
-            {
-                id: 'driveState.shift_state',
-                name: 'Shift State',
-                type: 'string',
-                role: 'indicator',
-                read: true,
-                write: false
-            },
-
-            {
-                id: 'driveState.power',
-                name: 'Power',
-                type: 'number',
-                role: 'value.power.consumption',
-                unit: 'Wh',
-                read: true,
-                write: false
-            },
-            {
-                id: 'driveState.latitude',
-                name: 'Current position latitude',
-                type: 'number',
-                role: 'value.gps.latitude',
-                read: true,
-                write: false
-            },
-            {
-                id: 'driveState.longitude',
-                name: 'Current position longitude',
-                type: 'number',
-                role: 'value.gps.longitude',
-                read: true,
-                write: false
-            },
-            {
-                id: 'driveState.heading',
-                name: 'Car heading',
-                type: 'number',
-                role: 'value.direction',
-                unit: '°deg',
-                read: true,
-                write: false,
-                min: 0,
-                max: 360
-            },
-            {
-                id: 'driveState.gps_as_of',
-                name: 'Timestamp of last gps position',
-                type: 'number',
-                role: 'value.time',
-                read: true,
-                write: false
-            },
-            {
-                id: 'vehicle.is_user_present',
-                name: 'Is user present',
-                type: 'boolean',
-                role: 'indicator',
-                read: true,
-                write: false
-            },
-            {id: 'vehicle.car_type', name: 'Car Type', type: 'string', role: 'text', read: true, write: false},
-
-            {
-                id: 'softwareUpdate.download_percentage',
-                name: 'Software download in %',
-                type: 'number',
-                role: 'level',
-                unit: '%',
-                read: true,
-                write: false,
-                min: 0,
-                max: 100
-            },
-            {
-                id: 'softwareUpdate.expected_duration_sec',
-                name: 'Update expected duration',
-                type: 'number',
-                role: 'value',
-                unit: 'sec',
-                read: true,
-                write: false
-            },
-            {
-                id: 'softwareUpdate.install_percentage',
-                name: 'Installation in %',
-                type: 'number',
-                role: 'level',
-                unit: '%',
-                read: true,
-                write: false,
-                min: 0,
-                max: 100
-            },
-            {
-                id: 'softwareUpdate.status',
-                name: 'Update Status',
-                type: 'string',
-                role: 'state',
-                read: true,
-                write: false
-            },
-            {
-                id: 'softwareUpdate.version',
-                name: 'Update Version',
-                type: 'string',
-                role: 'text',
-                read: true,
-                write: false
-            },
-        ];
-
-        await this.createObjects(SleepStates);
-        await this.createObjects(AwakeStates);
-    }
 
     async installDistanceObjects(){
         const Adapter = this;
-        let AwakeDependantStates = [
-            // States that need information about Distance format
-            {
-                id: 'driveState.SpeedLimitMax',
-                name: 'Speed limit Max settable',
-                type: 'number',
-                role: 'value.speed',
-                unit: Adapter.distanceUnit,
-                read: true,
-                write: false
-            },
-            {
-                id: 'driveState.SpeedLimitMin',
-                name: 'Speed limit Min settable',
-                type: 'number',
-                role: 'value.speed',
-                unit: Adapter.distanceUnit,
-                read: true,
-                write: false
-            },
-            {
-                id: 'chargeState.battery_range',
-                name: 'Battery Range',
-                type: 'number',
-                role: 'value.distance',
-                unit: Adapter.distanceUnit.substr(0, Adapter.distanceUnit.indexOf('/')),
-                read: true,
-                write: false
-            },
-            {
-                id: 'chargeState.est_battery_range',
-                name: 'Estimated Battery Range',
-                type: 'number',
-                role: 'value.distance',
-                unit: Adapter.distanceUnit.substr(0, Adapter.distanceUnit.indexOf('/')),
-                read: true,
-                write: false
-            },
-            {
-                id: 'chargeState.ideal_battery_range',
-                name: 'Ideal Battery Range',
-                type: 'number',
-                role: 'value.distance',
-                unit: Adapter.distanceUnit.substr(0, Adapter.distanceUnit.indexOf('/')),
-                read: true,
-                write: false
-            },
-            {
-                id: 'chargeState.charge_distance_added_rated',
-                name: 'Distance added with Charge',
-                type: 'number',
-                role: 'value.distance',
-                unit: Adapter.distanceUnit.substr(0, Adapter.distanceUnit.indexOf('/')),
-                read: true,
-                write: false
-            },
-
-            {
-                id: 'driveState.speed',
-                name: 'Speed',
-                type: 'number',
-                role: 'value.speed',
-                unit: Adapter.distanceUnit,
-                read: true,
-                write: false
-            },
-            {
-                id: 'vehicle.odometer',
-                name: 'Odometer',
-                type: 'number',
-                role: 'value.distance',
-                unit: Adapter.distanceUnit.substr(0, Adapter.distanceUnit.indexOf('/')),
-                read: true,
-                write: false
-            }
-        ];
-        await this.overwriteObjects(AwakeDependantStates);
+        const rangeUnit = Adapter.distanceUnit.substr(0, Adapter.distanceUnit.indexOf('/'));
+        await this.extendObjectAsync('driveState.SpeedLimitMax',
+            {common: {unit: Adapter.distanceUnit}}
+        );
+        await this.extendObjectAsync('driveState.SpeedLimitMin',
+            {common: {unit: Adapter.distanceUnit}}
+        );
+        await this.extendObjectAsync('chargeState.battery_range',
+            {common: {unit: rangeUnit}}
+        );
+        await this.extendObjectAsync('chargeState.est_battery_range',
+            {common: {unit: rangeUnit}}
+        );
+        await this.extendObjectAsync('chargeState.ideal_battery_range',
+            {common: {unit: rangeUnit}}
+        );
+        await this.extendObjectAsync('chargeState.charge_distance_added_rated',
+            {common: {unit: rangeUnit}}
+        );
+        await this.extendObjectAsync('driveState.speed',
+            {common: {unit: Adapter.distanceUnit}}
+        );
+        await this.extendObjectAsync('vehicle.odometer',
+            {common: {unit: rangeUnit}}
+        );
     }
 
     async installDependantObjects(vd){
-        await this.overwriteObjects([{
-            id: 'command.SetTemperature',
-            name: 'Set Temperature',
-            desc: 'Sets temperature of driver and passenger',
-            type: 'number',
-            role: 'value.temperature',
-            unit: '°C',
-            read: true,
-            write: true,
-            min: vd.climate_state.min_avail_temp,
-            max: vd.climate_state.max_avail_temp
-        }]);
+        await this.extendObjectAsync('command.SetTemperature', {
+            common: {
+                min: vd.climate_state.min_avail_temp,
+                max: vd.climate_state.max_avail_temp
+            }
+        });
 
         if(vd.vehicle_config.rear_seat_heaters === 1){
-            await this.overwriteObjects([
-                {
-                    id: 'command.seat_heater_rear_center',
+            await this.setObjectNotExistsAsync('command.seat_heater_rear_center', {
+                type: "state",
+                common: {
                     name: 'Rear center seat heater',
                     desc: 'Level of Seat heater (0 = off, 3 = max)',
                     type: 'number',
                     role: 'level',
-                    read: true,
                     write: true,
                     min: 0,
                     max: 3
                 },
-                {
-                    id: 'command.seat_heater_rear_left',
+                native: []
+            });
+            await this.setObjectNotExistsAsync('command.seat_heater_rear_left', {
+                type: "state",
+                common: {
                     name: 'Rear left seat heater',
                     desc: 'Level of Seat heater (0 = off, 3 = max)',
                     type: 'number',
@@ -1452,8 +826,11 @@ class TeslaMotors extends utils.Adapter {
                     min: 0,
                     max: 3
                 },
-                {
-                    id: 'command.seat_heater_rear_right',
+                native: []
+            });
+            await this.setObjectNotExistsAsync('command.seat_heater_rear_right', {
+                type: "state",
+                common: {
                     name: 'Rear right seat heater',
                     desc: 'Level of Seat heater (0 = off, 3 = max)',
                     type: 'number',
@@ -1463,54 +840,35 @@ class TeslaMotors extends utils.Adapter {
                     min: 0,
                     max: 3
                 },
-            ]);
-        }
-        if(vd.vehicle_config.sun_roof_installed){
-            await this.overwriteObjects([{
-                id: 'command.SunRoofVent',
-                name: 'Sun Roof Vent',
-                type: 'boolean',
-                role: 'switch.lock',
-                read: true,
-                write: true
-            }]);
-        }
-
-        if(vd.vehicle_config.sun_roof_installed){
-            await this.overwriteObjects([{
-                id: 'climateState.sun_roof_percent_open',
-                name: 'Sun Roof % open',
-                type: 'number',
-                role: 'level.tilt',
-                unit: '%',
-                read: true,
-                write: false
-            }]);
-        }
-    }
-
-    async createObjects(objects){
-        await objects.forEach(async (object) => {
-            let id = object.id;
-            delete object.id;
-            await this.setObjectNotExistsAsync(id, {
-                type: 'state',
-                common: object,
                 native: []
             });
-        })
-    }
-
-    async overwriteObjects(objects){
-        await objects.forEach(async (object) => {
-            let id = object.id;
-            delete object.id;
-            await this.setObjectAsync(id, {
-                type: 'state',
-                common: object,
+        }
+        if(vd.vehicle_config.sun_roof_installed){
+            await this.setObjectNotExistsAsync('command.SunRoofVent', {
+                type: "state",
+                common: {
+                    name: 'Sun Roof Vent',
+                    type: 'boolean',
+                    role: 'switch.lock',
+                    write: true
+                },
                 native: []
             });
-        })
+        }
+
+        if(vd.vehicle_config.sun_roof_installed){
+            await this.setObjectNotExistsAsync('climateState.sun_roof_percent_open', {
+                type: "state",
+                common: {
+                    name: 'Sun Roof % open',
+                    type: 'number',
+                    role: 'level.tilt',
+                    unit: '%',
+                    write: false
+                },
+                native: []
+            });
+        }
     }
 }
 

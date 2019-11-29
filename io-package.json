@@ -60,7 +60,7 @@
         "readme": "https://github.com/dbweb-ch/ioBroker.tesla-motors/blob/master/README.md",
         "loglevel": "info",
         "messagebox": true,
-        "subscribe":  "messagebox",
+        "subscribe": "messagebox",
         "restartAdapters": [
             "tesla-motors"
         ],
@@ -87,5 +87,866 @@
         "vehicle_id_s": ""
     },
     "objects": [],
-    "instanceObjects": []
+    "instanceObjects": [
+        {
+            "_id": "command",
+            "type": "channel",
+            "common": {
+                "name": "Commands to control the car"
+            },
+            "native": {}
+        },
+        {
+            "_id": "vehicle",
+            "type": "channel",
+            "common": {
+                "name": "Information about your car"
+            },
+            "native": {}
+        },
+        {
+            "_id": "chargeState",
+            "type": "channel",
+            "common": {
+                "name": "Information about car charge States"
+            },
+            "native": {}
+        },
+        {
+            "_id": "climateState",
+            "type": "channel",
+            "common": {
+                "name": "Information about car climate"
+            },
+            "native": {}
+        },
+        {
+            "_id": "driveState",
+            "type": "channel",
+            "common": {
+                "name": "Information about the drive state"
+            },
+            "native": {}
+        },
+        {
+            "_id": "command.standby",
+            "type": "state",
+            "common": {
+                "name": "Wake up State",
+                "type": "boolean",
+                "role": "info.standby",
+                "write": true
+            },
+            "native": {}
+        },
+        {
+            "_id": "vehicle.id_s",
+            "type": "state",
+            "common": {
+                "name": "API Identifier of the car",
+                "type": "string",
+                "role": "info.address"
+            },
+            "native": {}
+        },
+        {
+            "_id": "vehicle.vin",
+            "type": "state",
+            "common": {
+                "name": "VIN",
+                "type": "string",
+                "role": "info.address"
+            },
+            "native": {}
+        },
+        {
+            "_id": "vehicle.display_name",
+            "type": "state",
+            "common": {
+                "name": "Your car name",
+                "type": "string",
+                "role": "info.name"
+            },
+            "native": {}
+        },
+        {
+            "_id": "vehicle.option_codes",
+            "type": "state",
+            "common": {
+                "name": "List of option codes of your car",
+                "desc": "Check them on https://tesla-api.timdorr.com/vehicle/optioncodes",
+                "type": "string",
+                "role": "text"
+            },
+            "native": {}
+        },
+        {
+            "_id": "vehicle.color",
+            "type": "state",
+            "common": {
+                "name": "Color of your car",
+                "type": "string",
+                "role": "text"
+            },
+            "native": {}
+        },
+        {
+            "_id": "vehicle.odometer",
+            "type": "state",
+            "common": {
+                "name": "Odometer",
+                "type": "number",
+                "role": "value.distance"
+            },
+            "native": {}
+        },
+        {
+            "_id": "command.doorLock",
+            "type": "state",
+            "common": {
+                "name": "Door Lock",
+                "desc": "true - open,false - close",
+                "type": "boolean",
+                "role": "switch.lock.door",
+                "write": true
+            },
+            "native": {}
+        },
+        {
+            "_id": "command.honkHorn",
+            "type": "state",
+            "common": {
+                "name": "Honk Horn",
+                "type": "boolean",
+                "role": "button",
+                "def": false,
+                "read": false,
+                "write": true
+            },
+            "native": {}
+        },
+        {
+            "_id": "command.flashLights",
+            "type": "state",
+            "common": {
+                "name": "Flash Lights",
+                "type": "boolean",
+                "role": "button",
+                "def": false,
+                "read": false,
+                "write": true
+            },
+            "native": {}
+        },
+        {
+            "_id": "command.Climate",
+            "type": "state",
+            "common": {
+                "name": "Climate",
+                "desc": "Turn on climate to pre-set temperature",
+                "type": "boolean",
+                "role": "switch.power",
+                "write": true
+            },
+            "native": {}
+        },
+        {
+            "_id": "command.SetChargeLimit",
+            "type": "state",
+            "common": {
+                "name": "Set Charge Limit",
+                "type": "number",
+                "role": "level",
+                "unit": "%",
+                "write": true,
+                "min": 50,
+                "max": 100
+            },
+            "native": {}
+        },
+        {
+            "_id": "command.ChargePort",
+            "type": "state",
+            "common": {
+                "name": "Open / Close charge Port",
+                "type": "boolean",
+                "role": "switch.lock",
+                "write": true
+            },
+            "native": {}
+        },
+        {
+            "_id": "command.UnlockChargePort",
+            "type": "state",
+            "common": {
+                "name": "Unlock charge Port",
+                "type": "boolean",
+                "role": "switch.lock",
+                "read": false,
+                "write": true
+            },
+            "native": {}
+        },
+        {
+            "_id": "command.Charging",
+            "type": "state",
+            "common": {
+                "name": "Charging state",
+                "type": "boolean",
+                "role": "switch.enable",
+                "write": true
+            },
+            "native": {}
+        },
+        {
+            "_id": "command.ValetMode",
+            "type": "state",
+            "common": {
+                "name": "Enable valet Mode",
+                "type": "boolean",
+                "role": "switch.enable",
+                "write": true
+            },
+            "native": {}
+        },
+        {
+            "_id": "command.ValetPin",
+            "type": "state",
+            "common": {
+                "name": "Pin for Valet Mode",
+                "type": "string",
+                "def": "????",
+                "write": true
+            },
+            "native": {}
+        },
+        {
+            "_id": "command.SpeedLimit",
+            "type": "state",
+            "common": {
+                "name": "Limit max. car Speed",
+                "desc": "Set Limit with 'SpeedLimitValue'",
+                "type": "boolean",
+                "role": "switch.enable",
+                "write": true
+            },
+            "native": {}
+        },
+        {
+            "_id": "command.SentryMode",
+            "type": "state",
+            "common": {
+                "name": "Enable Sentry Mode",
+                "type": "boolean",
+                "role": "switch.enable",
+                "write": true
+            },
+            "native": {}
+        },
+        {
+            "_id": "command.RemoteStart",
+            "type": "state",
+            "common": {
+                "name": "Enable Remote Start",
+                "type": "boolean",
+                "role": "switch.enable",
+                "write": true
+            },
+            "native": {}
+        },
+        {
+            "_id": "command.StartSoftwareUpdate",
+            "type": "state",
+            "common": {
+                "name": "Start Software Update",
+                "desc": "Software need to be available (Download 100%)",
+                "type": "boolean",
+                "role": "button.start",
+                "write": true
+            },
+            "native": {}
+        },
+        {
+            "_id": "command.seat_heater_left",
+            "type": "state",
+            "common": {
+                "name": "Left seat heater",
+                "desc": "Level of Seat heater (0 = off,3 = max)",
+                "type": "number",
+                "role": "level",
+                "write": true,
+                "min": 0,
+                "max": 3
+            },
+            "native": {}
+        },
+        {
+            "_id": "command.seat_heater_right",
+            "type": "state",
+            "common": {
+                "name": "Right seat heater",
+                "desc": "Level of Seat heater (0 = off,3 = max)",
+                "type": "number",
+                "role": "level",
+                "write": true,
+                "min": 0,
+                "max": 3
+            },
+            "native": {}
+        },
+        {
+            "_id": "command.steering_wheel_heater",
+            "type": "state",
+            "common": {
+                "name": "Steering wheel heater",
+                "type": "boolean",
+                "role": "switch.enable",
+                "write": true
+            },
+            "native": {}
+        },
+        {
+            "_id": "command.windowVent",
+            "type": "state",
+            "common": {
+                "name": "Vent Window",
+                "desc": "Hint: Can also be used to close all windows",
+                "type": "boolean",
+                "role": "switch.lock.window",
+                "write": true
+            },
+            "native": {}
+        },
+        {
+            "_id": "command.openTrunk",
+            "type": "state",
+            "common": {
+                "name": "Open trunk",
+                "type": "boolean",
+                "role": "button.open.door",
+                "write": true
+            },
+            "native": {}
+        },
+        {
+            "_id": "command.openFrunk",
+            "type": "state",
+            "common": {
+                "name": "Open frunk (front trunk)",
+                "type": "boolean",
+                "role": "button.open.door",
+                "write": true
+            },
+            "native": {}
+        },
+        {
+            "_id": "command.SetTemperature",
+            "type": "state",
+            "common": {
+                "name": "Set Temperature",
+                "desc": "Sets temperature of driver and passenger",
+                "type": "number",
+                "role": "value.temperature",
+                "unit": "°C",
+                "write": true
+            },
+            "native": {}
+        },
+        {
+            "_id": "chargeState.charging_state",
+            "type": "state",
+            "common": {
+                "name": "Charging State",
+                "type": "string",
+                "role": "state"
+            },
+            "native": {}
+        },
+        {
+            "_id": "chargeState.battery_level",
+            "type": "state",
+            "common": {
+                "name": "Battery level",
+                "type": "number",
+                "role": "value.battery",
+                "unit": "%",
+                "min": 0,
+                "max": 100
+            },
+            "native": {}
+        },
+        {
+            "_id": "chargeState.scheduled_charging_start_time",
+            "type": "state",
+            "common": {
+                "name": "Scheduled charge start Time",
+                "desc": "Current Format: yyyy-MM-ddTHH:mm:ss (But can be changed by Tesla anytime)",
+                "type": "string",
+                "role": "date.start"
+            },
+            "native": {}
+        },
+        {
+            "_id": "chargeState.battery_heater_on",
+            "type": "state",
+            "common": {
+                "name": "Battery heater State",
+                "type": "boolean",
+                "role": "indicator"
+            },
+            "native": {}
+        },
+        {
+            "_id": "chargeState.minutes_to_full_charge",
+            "type": "state",
+            "common": {
+                "name": "Minutes to fully Charge",
+                "type": "number",
+                "role": "value"
+            },
+            "native": {}
+        },
+        {
+            "_id": "chargeState.fast_charger_present",
+            "type": "state",
+            "common": {
+                "name": "Fast Charger connected",
+                "type": "boolean",
+                "role": "indicator"
+            },
+            "native": {}
+        },
+        {
+            "_id": "chargeState.usable_battery_level",
+            "type": "state",
+            "common": {
+                "name": "Usable battery level",
+                "type": "number",
+                "role": "value.battery",
+                "unit": "%",
+                "min": 0,
+                "max": 100
+            },
+            "native": {}
+        },
+        {
+            "_id": "chargeState.charge_energy_added",
+            "type": "state",
+            "common": {
+                "name": "Energy added with last Charge",
+                "type": "number",
+                "role": "value",
+                "unit": "kWh"
+            },
+            "native": {}
+        },
+        {
+            "_id": "chargeState.charger_voltage",
+            "type": "state",
+            "common": {
+                "name": "Charger Voltage",
+                "type": "number",
+                "role": "value.voltage",
+                "unit": "V"
+            },
+            "native": {}
+        },
+        {
+            "_id": "chargeState.charger_power",
+            "type": "state",
+            "common": {
+                "name": "Charger Power",
+                "type": "number",
+                "role": "value",
+                "unit": "W"
+            },
+            "native": {}
+        },
+        {
+            "_id": "chargeState.charge_current_request",
+            "type": "state",
+            "common": {
+                "name": "Charge current requested",
+                "type": "number",
+                "role": "value.current",
+                "unit": "A"
+            },
+            "native": {}
+        },
+        {
+            "_id": "chargeState.charge_port_cold_weather_mode",
+            "type": "state",
+            "common": {
+                "name": "Charge port cold weather mode",
+                "type": "boolean",
+                "role": "indicator"
+            },
+            "native": {}
+        },
+        {
+            "_id": "chargeState.battery_range",
+            "type": "state",
+            "common": {
+                "name": "Battery Range",
+                "type": "number",
+                "role": "value.distance"
+            },
+            "native": {}
+        },
+        {
+            "_id": "chargeState.est_battery_range",
+            "type": "state",
+            "common": {
+                "name": "Estimated Battery Range",
+                "type": "number",
+                "role": "value.distance"
+            },
+            "native": {}
+        },
+        {
+            "_id": "chargeState.ideal_battery_range",
+            "type": "state",
+            "common": {
+                "name": "Ideal Battery Range",
+                "type": "number",
+                "role": "value.distance"
+            },
+            "native": {}
+        },
+        {
+            "_id": "chargeState.charge_distance_added_rated",
+            "type": "state",
+            "common": {
+                "name": "Distance added with Charge",
+                "type": "number",
+                "role": "value.distance"
+            },
+            "native": {}
+        },
+        {
+            "_id": "climateState.inside_temp",
+            "type": "state",
+            "common": {
+                "name": "Inside Temperature",
+                "type": "number",
+                "role": "value.temperature",
+                "unit": "°C"
+            },
+            "native": {}
+        },
+        {
+            "_id": "climateState.outside_temp",
+            "type": "state",
+            "common": {
+                "name": "Outside Temperature",
+                "type": "number",
+                "role": "value.temperature",
+                "unit": "°C"
+            },
+            "native": {}
+        },
+        {
+            "_id": "climateState.max_avail_temp",
+            "type": "state",
+            "common": {
+                "name": "Max. available inside Temperature",
+                "type": "number",
+                "role": "value.temperature",
+                "unit": "°C"
+            },
+            "native": {}
+        },
+        {
+            "_id": "climateState.min_avail_temp",
+            "type": "state",
+            "common": {
+                "name": "Min. available inside Temperature",
+                "type": "number",
+                "role": "value.temperature",
+                "unit": "°C"
+            },
+            "native": {}
+        },
+        {
+            "_id": "climateState.sun_roof_installed",
+            "type": "state",
+            "common": {
+                "name": "Sun Roof Installed",
+                "type": "boolean",
+                "role": "indicator"
+            },
+            "native": {}
+        },
+        {
+            "_id": "climateState.front_driver_window",
+            "type": "state",
+            "common": {
+                "name": "Front driver window state",
+                "type": "boolean",
+                "role": "sensor.window"
+            },
+            "native": {}
+        },
+        {
+            "_id": "climateState.front_passenger_window",
+            "type": "state",
+            "common": {
+                "name": "Front passenger window state",
+                "type": "boolean",
+                "role": "sensor.window"
+            },
+            "native": {}
+        },
+        {
+            "_id": "climateState.rear_driver_window",
+            "type": "state",
+            "common": {
+                "name": "Rear driver window state",
+                "type": "boolean",
+                "role": "sensor.window"
+            },
+            "native": {}
+        },
+        {
+            "_id": "climateState.rear_passenger_window",
+            "type": "state",
+            "common": {
+                "name": "Front Passenger window state",
+                "type": "boolean",
+                "role": "sensor.window"
+            },
+            "native": {}
+        },
+        {
+            "_id": "climateState.wiper_blade_heater",
+            "type": "state",
+            "common": {
+                "name": "Wiper blade heater",
+                "type": "boolean",
+                "role": "indicator"
+            },
+            "native": {}
+        },
+        {
+            "_id": "climateState.side_mirror_heaters",
+            "type": "state",
+            "common": {
+                "name": "Side mirrors heaters",
+                "type": "boolean",
+                "role": "indicator"
+            },
+            "native": {}
+        },
+        {
+            "_id": "climateState.is_preconditioning",
+            "type": "state",
+            "common": {
+                "name": "Is preconditioning",
+                "type": "boolean",
+                "role": "indicator"
+            },
+            "native": {}
+        },
+        {
+            "_id": "climateState.smart_preconditioning",
+            "type": "state",
+            "common": {
+                "name": "Smart preconditioning",
+                "type": "boolean",
+                "role": "indicator"
+            },
+            "native": {}
+        },
+        {
+            "_id": "climateState.is_auto_conditioning_on",
+            "type": "state",
+            "common": {
+                "name": "Auto conditioning",
+                "type": "boolean",
+                "role": "indicator"
+            },
+            "native": {}
+        },
+        {
+            "_id": "climateState.battery_heater",
+            "type": "state",
+            "common": {
+                "name": "Battery heater",
+                "type": "boolean",
+                "role": "indicator"
+            },
+            "native": {}
+        },
+        {
+            "_id": "driveState.shift_state",
+            "type": "state",
+            "common": {
+                "name": "Shift State",
+                "type": "string",
+                "role": "indicator"
+            },
+            "native": {}
+        },
+        {
+            "_id": "driveState.power",
+            "type": "state",
+            "common": {
+                "name": "Power",
+                "type": "number",
+                "role": "value.power.consumption",
+                "unit": "Wh"
+            },
+            "native": {}
+        },
+        {
+            "_id": "driveState.latitude",
+            "type": "state",
+            "common": {
+                "name": "Current position latitude",
+                "type": "number",
+                "role": "value.gps.latitude"
+            },
+            "native": {}
+        },
+        {
+            "_id": "driveState.longitude",
+            "type": "state",
+            "common": {
+                "name": "Current position longitude",
+                "type": "number",
+                "role": "value.gps.longitude"
+            },
+            "native": {}
+        },
+        {
+            "_id": "driveState.heading",
+            "type": "state",
+            "common": {
+                "name": "Car heading",
+                "type": "number",
+                "role": "value.direction",
+                "unit": "°deg",
+                "min": 0,
+                "max": 360
+            },
+            "native": {}
+        },
+        {
+            "_id": "driveState.gps_as_of",
+            "type": "state",
+            "common": {
+                "name": "Timestamp of last gps position",
+                "type": "number",
+                "role": "value.time"
+            },
+            "native": {}
+        },
+        {
+            "_id": "driveState.SpeedLimitMax",
+            "type": "state",
+            "common": {
+                "name": "Speed limit Max settable",
+                "type": "number",
+                "role": "value.speed"
+            },
+            "native": {}
+        },
+        {
+            "_id": "driveState.SpeedLimitMin",
+            "type": "state",
+            "common": {
+                "name": "Speed limit Min settable",
+                "type": "number",
+                "role": "value.speed"
+            },
+            "native": {}
+        },
+        {
+            "_id": "driveState.speed",
+            "type": "state",
+            "common": {
+                "name": "Current speed",
+                "type": "number",
+                "role": "value.speed"
+            },
+            "native": {}
+        },
+        {
+            "_id": "vehicle.is_user_present",
+            "type": "state",
+            "common": {
+                "name": "Is user present",
+                "type": "boolean",
+                "role": "indicator"
+            },
+            "native": {}
+        },
+        {
+            "_id": "vehicle.car_type",
+            "type": "state",
+            "common": {
+                "name": "Car Type",
+                "type": "string",
+                "role": "text"
+            },
+            "native": {}
+        },
+        {
+            "_id": "softwareUpdate.download_percentage",
+            "type": "state",
+            "common": {
+                "name": "Software download in %",
+                "type": "number",
+                "role": "level",
+                "unit": "%",
+                "min": 0,
+                "max": 100
+            },
+            "native": {}
+        },
+        {
+            "_id": "softwareUpdate.expected_duration_sec",
+            "type": "state",
+            "common": {
+                "name": "Update expected duration",
+                "type": "number",
+                "role": "value",
+                "unit": "sec"
+            },
+            "native": {}
+        },
+        {
+            "_id": "softwareUpdate.install_percentage",
+            "type": "state",
+            "common": {
+                "name": "Installation in %",
+                "type": "number",
+                "role": "level",
+                "unit": "%",
+                "min": 0,
+                "max": 100
+            },
+            "native": {}
+        },
+        {
+            "_id": "softwareUpdate.status",
+            "type": "state",
+            "common": {
+                "name": "Update Status",
+                "type": "string",
+                "role": "state"
+            },
+            "native": {}
+        },
+        {
+            "_id": "softwareUpdate.version",
+            "type": "state",
+            "common": {
+                "name": "Update Version",
+                "type": "string",
+                "role": "text"
+            },
+            "native": {}
+        }
+    ]
 }
