@@ -83,7 +83,7 @@ class TeslaMotors extends utils.Adapter {
         const Adapter = this;
         await Adapter.GetStandbyInfo();
         // Check every minute the standby Info
-        this.GetStandbyInfoTimeout = setTimeout(() => Adapter.GetStandbyInfo(), 60 * 1000);
+        this.GetStandbyInfoTimeout = setTimeout(() => Adapter.RefreshStandbyInfoTask(), 60 * 1000);
     }
 
     async CheckRefreshRequestTask(){
