@@ -83,7 +83,7 @@ class TeslaMotors extends utils.Adapter {
         const Adapter = this;
         await Adapter.GetStandbyInfo();
         // Check every minute the standby Info
-        this.GetStandbyInfoTimeout = setTimeout(() => Adapter.GetStandbyInfo(), 24 * 60 * 60 * 1000);
+        this.GetStandbyInfoTimeout = setTimeout(() => Adapter.GetStandbyInfo(), 60 * 1000);
     }
 
     async CheckRefreshRequestTask(){
@@ -527,12 +527,12 @@ class TeslaMotors extends utils.Adapter {
 
             Adapter.log.debug('vehicle Answer:' + JSON.stringify(vehicle));
 
-            Adapter.setState('vehicle.id_s', vehicle.id_s, true);
-            Adapter.setState('vehicle.vin', vehicle.vin, true);
-            Adapter.setState('vehicle.display_name', vehicle.display_name, true);
-            Adapter.setState('command.standby', 'online' !== vehicle.state, true);
-            Adapter.setState('vehicle.option_codes', vehicle.option_codes, true);
-            Adapter.setState('vehicle.color', vehicle.color, true);
+            await Adapter.setStateAsync('vehicle.id_s', vehicle.id_s, true);
+            await Adapter.setStateAsync('vehicle.vin', vehicle.vin, true);
+            await Adapter.setStateAsync('vehicle.display_name', vehicle.display_name, true);
+            await Adapter.setStateAsync('command.standby', 'online' !== vehicle.state, true);
+            await Adapter.setStateAsync('vehicle.option_codes', vehicle.option_codes, true);
+            await Adapter.setStateAsync('vehicle.color', vehicle.color, true);
 
             if(vehicle.state === 'online' && !this.lastWakeState){
                 // Car was sleeping before, but woke up now. So we trigger a refresh of data
@@ -555,7 +555,10 @@ class TeslaMotors extends utils.Adapter {
         await Adapter.GetStandbyInfo();
         let standby;
         standby = await Adapter.getStateAsync('command.standby');
-        if(standby && !standby.val && standby.ack) return;
+        if(standby && !standby.val && standby.ack){
+            Adapter.log.debug("Wanted to wake up the car, but car is already awake.");
+            return;
+        }
 
         await new Promise(async resolve => {
             Adapter.log.debug('Waking up the car...');
