@@ -32,8 +32,6 @@ class TeslaMotors extends utils.Adapter {
         await Adapter.installObjects();
         this.subscribeStates('command.*');
         this.log.debug('Starting Tesla Motors');
-        await Adapter.setStateAsync('info.connection', false, true);
-
         Adapter.log.debug("Check for Tokens and Expires");
 
         let Expires = new Date(Adapter.config.tokenExpire);
