@@ -196,7 +196,7 @@
             "common": {
                 "name": "Odometer",
                 "type": "number",
-                "role": "value.distance"
+                "role": "state"
             },
             "native": {}
         },
@@ -589,7 +589,7 @@
             "common": {
                 "name": "Battery Range",
                 "type": "number",
-                "role": "value.distance"
+                "role": "state"
             },
             "native": {}
         },
@@ -599,7 +599,7 @@
             "common": {
                 "name": "Estimated Battery Range",
                 "type": "number",
-                "role": "value.distance"
+                "role": "state"
             },
             "native": {}
         },
@@ -609,7 +609,7 @@
             "common": {
                 "name": "Ideal Battery Range",
                 "type": "number",
-                "role": "value.distance"
+                "role": "state"
             },
             "native": {}
         },
@@ -619,7 +619,7 @@
             "common": {
                 "name": "Distance added with Charge",
                 "type": "number",
-                "role": "value.distance"
+                "role": "state"
             },
             "native": {}
         },
@@ -847,7 +847,7 @@
             "common": {
                 "name": "Speed limit Max settable",
                 "type": "number",
-                "role": "value.speed"
+                "role": "state"
             },
             "native": {}
         },
@@ -857,7 +857,7 @@
             "common": {
                 "name": "Speed limit Min settable",
                 "type": "number",
-                "role": "value.speed"
+                "role": "state"
             },
             "native": {}
         },
@@ -867,7 +867,7 @@
             "common": {
                 "name": "Current speed",
                 "type": "number",
-                "role": "value.speed"
+                "role": "state"
             },
             "native": {}
         },

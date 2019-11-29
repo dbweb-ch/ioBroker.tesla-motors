@@ -741,7 +741,7 @@ class TeslaMotors extends utils.Adapter {
                     name: 'Limit car Speed',
                     desc: 'Min ' + spmin + Adapter.distanceUnit + ', Max ' + spmax + Adapter.distanceUnit,
                     type: 'number',
-                    role: 'value.speed',
+                    role: 'state',
                     unit: Adapter.distanceUnit,
                     write: true,
                     min: spmin,
