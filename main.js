@@ -21,6 +21,9 @@ class TeslaMotors extends utils.Adapter {
         this.lastTimeWokeUp = new Date();
         this.lastWakeState = false;
         this.refreshData = false;
+
+        // Timeouts and intervals
+        this.RefreshTokenTimeout = null;
     }
 
     /**
@@ -55,12 +58,9 @@ class TeslaMotors extends utils.Adapter {
 
     async SetupWakeupStrategy(){
         const Adapter = this;
-        // Check for Token Refresh once per day but sure on startup
+        // Check for Token refresh on startup
         await Adapter.RefreshToken();
-        setInterval(() => {
-            if(Adapter.config.authToken.length === 0) return;
-            Adapter.RefreshToken();
-        }, 24 * 60 * 60 * 1000);
+
         // Get sleeping info once per minute
         await Adapter.GetSleepingInfo();
         setInterval(() => {
@@ -141,8 +141,12 @@ class TeslaMotors extends utils.Adapter {
      * Is called when adapter shuts down - callback has to be called under any circumstances!
      */
     onUnload(callback){
+        const Adapter = this;
         try{
             this.log.info('cleaned everything up...');
+            if(Adapter.RefreshTokenTimeout){
+                clearTimeout(Adapter.RefreshTokenTimeout);
+            }
             callback();
         }catch(e){
             callback();
@@ -430,18 +434,20 @@ class TeslaMotors extends utils.Adapter {
 
         let Expires = new Date(Adapter.config.tokenExpire);
         Expires.setDate(Expires.getDate() - 10); // Refresh 10 days before expire
-        if(Expires < new Date()){
+        if(Adapter.config.authToken.length > 0 && Expires < new Date()){
             tjs.refreshToken(Adapter.config.refreshToken, async (err, result) => {
                 if(result.response.statusCode !== 200){
                     Adapter.log.warn('Could not refresh Token, trying to get a new Token');
                     await Adapter.setStateAsync('info.connection', false, true);
-                    Adapter.GetNewToken();
+                    await Adapter.GetNewToken();
                 }
                 else{
                     await Adapter.SetNewToken(result.authToken, result.refreshToken, result.body.expires_in);
                 }
             })
         }
+        // Check again in 1 Day.
+        Adapter.RefreshTokenTimeout = setTimeout(Adapter.RefreshToken, 24 * 60 * 60 * 1000);
     }
 
     async SetNewToken(authToken, refreshToken, tokenExpire){
