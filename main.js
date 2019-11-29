@@ -72,16 +72,18 @@ class TeslaMotors extends utils.Adapter {
     }
 
     async RefreshTokenTask(){
-        this.log.debug('Checking if token is valid');
+        const Adapter = this;
+        Adapter.log.debug('Checking if token is valid');
         await this.RefreshToken();
         // Check again in 1 Day.
-        this.RefreshTokenTimeout = setTimeout(this.RefreshTokenTask, 24 * 60 * 60 * 1000);
+        this.RefreshTokenTimeout = setTimeout(() => Adapter.RefreshTokenTask(), 24 * 60 * 60 * 1000);
     }
 
     async RefreshStandbyInfoTask(){
-        await this.GetStandbyInfo();
+        const Adapter = this;
+        await Adapter.GetStandbyInfo();
         // Check every minute the standby Info
-        this.GetStandbyInfoTimeout = setTimeout(this.GetStandbyInfo, 24 * 60 * 60 * 1000);
+        this.GetStandbyInfoTimeout = setTimeout(() => Adapter.GetStandbyInfo(), 24 * 60 * 60 * 1000);
     }
 
     async CheckRefreshRequestTask(){
@@ -91,7 +93,7 @@ class TeslaMotors extends utils.Adapter {
             this.refreshData = false;
             await this.GetAllInfo();
         }
-        this.RefreshRequestTimeout = setTimeout(Adapter.CheckRefreshRequestTask, 1000);
+        this.RefreshRequestTimeout = setTimeout(() => Adapter.CheckRefreshRequestTask(), 1000);
     }
 
     async RefreshAllInfoTask(){
@@ -101,11 +103,11 @@ class TeslaMotors extends utils.Adapter {
         switch(Adapter.config.wakeupPlan){
             case 'aggressive':
                 await Adapter.GetAllInfo();
-                Adapter.RefreshAllInfoTimeout = setTimeout(Adapter.RefreshAllInfoTask, 60 * 1000); // once per minute
+                Adapter.RefreshAllInfoTimeout = setTimeout(() => Adapter.RefreshAllInfoTask(), 60 * 1000); // once per minute
                 break;
             case 'temperate':
                 await Adapter.GetAllInfo();
-                Adapter.RefreshAllInfoTimeout = setTimeout(Adapter.RefreshAllInfoTask, 60 * 60 * 1000); // once per hour
+                Adapter.RefreshAllInfoTimeout = setTimeout(() => Adapter.RefreshAllInfoTask(), 60 * 60 * 1000); // once per hour
                 break;
             case 'off':
                 // Only get data when something changes or car is awake anyway (Done in GetSleepingInfo)
@@ -153,7 +155,7 @@ class TeslaMotors extends utils.Adapter {
                     await Adapter.GetAllInfo();
                 }
 
-                Adapter.RefreshAllInfoTimeout = setTimeout(Adapter.RefreshAllInfoTask, 60 * 1000); // check every minute
+                Adapter.RefreshAllInfoTimeout = setTimeout(() => Adapter.RefreshAllInfoTask(), 60 * 1000); // check every minute
                 break;
         }
     }
