@@ -1504,21 +1504,6 @@ class TeslaMotors extends utils.Adapter {
             });
         })
     }
-
-
-    /**
-     * type "number" | "string" | "boolean" | "array" | "object" | "mixed" | "file"
-     */
-    setStateCreate(id, name, role, state, type = 'string', write = true, read = true, unit = ''){
-        this.setObjectNotExists(id, {
-            type: 'state',
-            common: {name: name, type: type, role: role, unit: unit, read: read, write: write},
-            native: []
-        });
-        this.setState(id, state, true);
-    }
-
-
 }
 
 // @ts-ignore parent is a valid property on module
