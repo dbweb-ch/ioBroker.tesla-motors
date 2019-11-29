@@ -137,21 +137,28 @@ class TeslaMotors extends utils.Adapter {
                     this.lastTimeWokeUp = new Date();
                 }
                 if(Minutes <= 10){
+                    Adapter.log.debug("Get all info because last Wakeup time is only " + Minutes + "ago.");
                     await Adapter.GetAllInfo();
                 }
                 else if(Minutes > 10 && Minutes <= 25){
                     // Don't do anything, try to let the car sleep...
+                    Adapter.log.debug("Don't wake up the car and let it go to sleep. Minutes since last woke up: " + Minutes);
                 }
                 else if(Minutes > 25){
                     // Check if car is still awake. If so, request once and then go back to "let it sleep"
                     let standby = await Adapter.getStateAsync('command.standby');
                     if(standby && !standby.val && standby.ack){
+                        Adapter.log.debug("Car is still awake after 25 Minutes. Retry to let him fall asleep for 15 minutes");
                         await Adapter.GetAllInfo();
                         this.lastTimeWokeUp = new Date();
                         this.lastTimeWokeUp.setMinutes(new Date().getMinutes() - 11);
                     }
+                    else{
+                        Adapter.log.debug("Car fall asleep successfully, will leave him alone for a while...");
+                    }
                 }
                 else if(Minutes > 60 * 12){
+                    Adapter.log.debug("Car was sleeping for > 12 hours, Update information");
                     await Adapter.GetAllInfo();
                 }
 
