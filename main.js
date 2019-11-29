@@ -696,7 +696,7 @@ class TeslaMotors extends utils.Adapter {
 
 
         Adapter.setState('vehicle.is_user_present', vd.vehicle_state.is_user_present, true);
-        Adapter.setState('vehicle.odometer', vd.vehicle_state.odometer, true);
+        Adapter.setState('vehicle.odometer', Adapter.m_km(vd.vehicle_state.odometer), true);
         Adapter.setState('vehicle.car_type', vd.vehicle_config.car_type, true);
 
         Adapter.setState('softwareUpdate.download_percentage', vd.vehicle_state.software_update.download_perc, true);
