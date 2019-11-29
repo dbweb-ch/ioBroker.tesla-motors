@@ -747,7 +747,7 @@ class TeslaMotors extends utils.Adapter {
                     min: spmin,
                     max: spmax
                 },
-                native: []
+                native: {}
             });
         }
     }
@@ -812,7 +812,7 @@ class TeslaMotors extends utils.Adapter {
                     min: 0,
                     max: 3
                 },
-                native: []
+                native: {}
             });
             await this.setObjectNotExistsAsync('command.seat_heater_rear_left', {
                 type: "state",
@@ -826,7 +826,7 @@ class TeslaMotors extends utils.Adapter {
                     min: 0,
                     max: 3
                 },
-                native: []
+                native: {}
             });
             await this.setObjectNotExistsAsync('command.seat_heater_rear_right', {
                 type: "state",
@@ -840,7 +840,7 @@ class TeslaMotors extends utils.Adapter {
                     min: 0,
                     max: 3
                 },
-                native: []
+                native: {}
             });
         }
         if(vd.vehicle_config.sun_roof_installed){
@@ -852,7 +852,7 @@ class TeslaMotors extends utils.Adapter {
                     role: 'switch.lock',
                     write: true
                 },
-                native: []
+                native: {}
             });
         }
 
@@ -866,7 +866,7 @@ class TeslaMotors extends utils.Adapter {
                     unit: '%',
                     write: false
                 },
-                native: []
+                native: {}
             });
         }
     }
