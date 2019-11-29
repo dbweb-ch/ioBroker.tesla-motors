@@ -582,7 +582,7 @@ class TeslaMotors extends utils.Adapter {
                 }
                 else{
                     Adapter.log.debug("Car is Awake");
-                    Adapter.setState('command.standby', false, true);
+                    await Adapter.setStateAsync('command.standby', false, true);
                     Adapter.WakeItUpRetryCount = 30;
                 }
             });
