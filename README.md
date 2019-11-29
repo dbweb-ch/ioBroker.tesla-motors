@@ -93,6 +93,8 @@ Keep your credentials save! <br />To reject all Tokens, change your Tesla accoun
 * Apollon77
 
 ## Changelog
+### 0.2.1
+* (dbweb-ch) Fix bug with odomoter, refactor object creation, fix issues with compact mode
 ### 0.2.0
 * (dbweb-ch) Included testing
 * (dbweb-ch) Encrypt passwords

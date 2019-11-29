@@ -1,8 +1,12 @@
 {
     "common": {
         "name": "tesla-motors",
-        "version": "0.2.0",
+        "version": "0.2.1",
         "news": {
+            "0.2.1": {
+                "en": "Fix bug with odomoter, refactor object creation, fix issues with compact mode",
+                "de": "Fehler mit Odometer korrigiert, Objecterstellung angepasst, compact mode repariert"
+            },
             "0.2.0": {
                 "en": "Included testing, encrypt password",
                 "de": "Testing hinzugefügt, passwort verschlüsselt speichern"
