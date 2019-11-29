@@ -85,12 +85,13 @@ class TeslaMotors extends utils.Adapter {
     }
 
     async CheckRefreshRequestTask(){
+        const Adapter = this;
         if(this.refreshData){
             this.log.debug('Refresh of full Data requested');
             this.refreshData = false;
             await this.GetAllInfo();
         }
-        this.RefreshRequestTimeout = setTimeout(this.CheckRefreshRequestTask, 1000);
+        this.RefreshRequestTimeout = setTimeout(Adapter.CheckRefreshRequestTask, 1000);
     }
 
     async RefreshAllInfoTask(){
