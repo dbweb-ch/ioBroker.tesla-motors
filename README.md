@@ -1,5 +1,13 @@
 ![Logo](admin/tesla-motors.png)
 # ioBroker.tesla-motors
+[![NPM version](http://img.shields.io/npm/v/iobroker.tesla-motors.svg)](https://www.npmjs.com/package/iobroker.tesla-motors)
+[![Downloads](https://img.shields.io/npm/dm/iobroker.tesla-motors.svg)](https://www.npmjs.com/package/iobroker.tesla-motors)
+[![installed](http://iobroker.live/badges/tesla-motors-installed.svg)](http://iobroker.live/badges/tesla-motors-installed.svg)
+[![Dependency Status](https://img.shields.io/david/dbweb-ch/iobroker.tesla-motors.svg)](https://david-dm.org/dbweb-ch/iobroker.tesla-motors)
+[![Known Vulnerabilities](https://snyk.io/test/github/dbweb-ch/ioBroker.tesla-motors/badge.svg)](https://snyk.io/test/github/dbweb-ch/ioBroker.tesla-motors)
+[![Build Status](http://img.shields.io/travis/dbweb-ch/ioBroker.tesla-motors.svg)](https://travis-ci.org/dbweb-ch/ioBroker.tesla-motors)
+
+[![NPM](https://nodei.co/npm/iobroker.tesla-motors.png?downloads=true)](https://nodei.co/npm/iobroker.tesla-motors/)
 
 ## tesla motors adapter for ioBroker
 
@@ -82,6 +90,7 @@ Keep your credentials save! <br />To reject all Tokens, change your Tesla accoun
 
 ## Contributors
 * dbweb-ch
+* Apollon77
 
 ## Changelog
 ### 0.2.0

@@ -21,65 +21,93 @@ class TeslaMotors extends utils.Adapter {
         this.lastTimeWokeUp = new Date();
         this.lastWakeState = false;
         this.refreshData = false;
+
+        // Timeouts and intervals
+        this.RefreshTokenTimeout = null;
+        this.RefreshRequestTimeout = null;
+        this.GetStandbyInfoTimeout = null;
+        this.RefreshAllInfoTimeout = null;
     }
 
     /**
      * Is called when databases are connected and adapter received configuration.
      */
     async onReady(){ //
-        const Adapter = this;
-
-        await Adapter.installObjects();
-        this.subscribeStates('command.*');
         this.log.debug('Starting Tesla Motors');
+        const Adapter = this;
         await Adapter.setStateAsync('info.connection', false, true);
 
-        Adapter.log.debug("Check for Tokens and Expires");
+        this.log.debug('All Objects installed, setting up tasks now');
 
-        let Expires = new Date(Adapter.config.tokenExpire);
-        Expires.setDate(Expires.getDate() - 10);
+        this.subscribeStates('command.*');
 
-        if(Adapter.config.authToken.length === 0){
-            await Adapter.setStateAsync('info.connection', false, true);
-        }
-        else if(Expires < new Date()){
-            await this.RefreshToken();
-        }
-        else{
-            await Adapter.setStateAsync('info.connection', true, true);
-            Adapter.log.debug("Connected to Tesla");
-        }
-
-        Adapter.log.debug("Everything initialized, setting up wakeUp strategy");
-        Adapter.SetupWakeupStrategy();
-        Adapter.refreshData = true;
+        // Setup Tasks
+        await Adapter.RefreshTokenTask();
+        await Adapter.RefreshStandbyInfoTask();
+        await Adapter.RefreshAllInfoTask();
+        await Adapter.CheckRefreshRequestTask();
     }
 
-    async SetupWakeupStrategy(){
+    onUnload(callback){
         const Adapter = this;
-        // Check for Token Refresh once per day but sure on startup
-        await Adapter.RefreshToken();
-        setInterval(() => {
-            if(Adapter.config.authToken.length === 0) return;
-            Adapter.RefreshToken();
-        }, 24 * 60 * 60 * 1000);
-        // Get sleeping info once per minute
-        await Adapter.GetSleepingInfo();
-        setInterval(() => {
-            Adapter.GetSleepingInfo();
-        }, 60 * 1000);
+        try{
+            this.log.info('cleaned everything up...');
+            if(Adapter.RefreshTokenTimeout){
+                clearTimeout(Adapter.RefreshTokenTimeout);
+            }
+            if(Adapter.RefreshRequestTimeout){
+                clearTimeout(Adapter.RefreshRequestTimeout);
+            }
+            if(Adapter.GetStandbyInfoTimeout){
+                clearTimeout(Adapter.GetStandbyInfoTimeout);
+            }
+            if(Adapter.RefreshAllInfoTimeout){
+                clearTimeout(Adapter.RefreshAllInfoTimeout);
+            }
 
-        // Setting up Interval based on wakeup-Plan
+            callback();
+        }catch(e){
+            callback();
+        }
+    }
+
+    async RefreshTokenTask(){
+        const Adapter = this;
+        Adapter.log.debug('Checking if token is valid');
+        await this.RefreshToken();
+        // Check again in 1 Day.
+        this.RefreshTokenTimeout = setTimeout(() => Adapter.RefreshTokenTask(), 24 * 60 * 60 * 1000);
+    }
+
+    async RefreshStandbyInfoTask(){
+        const Adapter = this;
+        await Adapter.GetStandbyInfo();
+        // Check every minute the standby Info
+        this.GetStandbyInfoTimeout = setTimeout(() => Adapter.RefreshStandbyInfoTask(), 60 * 1000);
+    }
+
+    async CheckRefreshRequestTask(){
+        const Adapter = this;
+        if(this.refreshData){
+            this.log.debug('Refresh of full Data requested');
+            this.refreshData = false;
+            await this.GetAllInfo();
+        }
+        this.RefreshRequestTimeout = setTimeout(() => Adapter.CheckRefreshRequestTask(), 1000);
+    }
+
+    async RefreshAllInfoTask(){
+        const Adapter = this;
+        this.log.debug('Refresh of all in Task run. Current wakeupPlan is "' + Adapter.config.wakeupPlan + '"');
+        // Setting up Timeouts based on wakeup-Plan
         switch(Adapter.config.wakeupPlan){
             case 'aggressive':
-                setInterval(() => {
-                    Adapter.GetAllInfo();
-                }, 60 * 1000); // Once per Minute
+                await Adapter.GetAllInfo();
+                Adapter.RefreshAllInfoTimeout = setTimeout(() => Adapter.RefreshAllInfoTask(), 60 * 1000); // once per minute
                 break;
             case 'temperate':
-                setInterval(() => {
-                    Adapter.GetAllInfo();
-                }, 60 * 60 * 1000); // Once per Hour
+                await Adapter.GetAllInfo();
+                Adapter.RefreshAllInfoTimeout = setTimeout(() => Adapter.RefreshAllInfoTask(), 60 * 60 * 1000); // once per hour
                 break;
             case 'off':
                 // Only get data when something changes or car is awake anyway (Done in GetSleepingInfo)
@@ -87,69 +115,58 @@ class TeslaMotors extends utils.Adapter {
             case 'smart':
             default:
                 /* Theory:
-                 * When car wakes up, there is someting happening.
+                 * When car wakes up, there is something happening.
                  * So if car woke up, get data every minute for 10 minutes.
-                 * If nothing happend (Car start, Climate start, Charging) leave car alone to let him fall asleep.
+                 * If nothing happened (Car start, Climate start, Charging) leave car alone to let him fall asleep.
                  * If not went to sleep, request data and wait again 15 minutes.
                  * But: If last wake up is more than 12 hours ago, request state!
                  *
                  * The whole thing is 1-minute-timer-based, so we do this stuff every minute
                  */
-                setInterval(async () => {
-                    let Minutes = Math.floor((new Date().getTime() - this.lastTimeWokeUp.getTime()) / 60000);
-                    // if car is in use, set lastTimeWokeUp to 0
-                    let shift_state = await Adapter.getStateAsync('driveState.shift_state');
-                    let speed = await Adapter.getStateAsync('driveState.speed');
-                    let climate = await Adapter.getStateAsync('command.Climate');
-                    let chargeState = await Adapter.getStateAsync('chargeState.charging_state');
+                let Minutes = Math.floor((new Date().getTime() - this.lastTimeWokeUp.getTime()) / 60000);
+                // if car is in use, set lastTimeWokeUp to 0
+                let shift_state = await Adapter.getStateAsync('driveState.shift_state');
+                let speed = await Adapter.getStateAsync('driveState.speed');
+                let climate = await Adapter.getStateAsync('command.Climate');
+                let chargeState = await Adapter.getStateAsync('chargeState.charging_state');
 
-                    if((shift_state && shift_state.val !== null && shift_state.val !== "P") ||
-                        (speed && speed.val > 0) ||
-                        (climate && climate.val) ||
-                        (chargeState && chargeState.val !== 'Disconnected' && chargeState.val !== 'Complete')){
+                if((shift_state && shift_state.val !== null && shift_state.val !== "P") ||
+                    (speed && speed.val > 0) ||
+                    (climate && climate.val) ||
+                    (chargeState && chargeState.val !== 'Disconnected' && chargeState.val !== 'Complete')){
+                    this.lastTimeWokeUp = new Date();
+                }
+                if(Minutes <= 10){
+                    Adapter.log.debug("Get all info because last Wakeup time is only " + Minutes + "ago.");
+                    await Adapter.GetAllInfo();
+                }
+                else if(Minutes > 10 && Minutes <= 25){
+                    // Don't do anything, try to let the car sleep...
+                    Adapter.log.debug("Don't wake up the car and let it go to sleep. Minutes since last woke up: " + Minutes);
+                }
+                else if(Minutes > 25){
+                    // Check if car is still awake. If so, request once and then go back to "let it sleep"
+                    let standby = await Adapter.getStateAsync('command.standby');
+                    if(standby && !standby.val && standby.ack){
+                        Adapter.log.debug("Car is still awake after 25 Minutes. Retry to let him fall asleep for 15 minutes");
+                        await Adapter.GetAllInfo();
                         this.lastTimeWokeUp = new Date();
+                        this.lastTimeWokeUp.setMinutes(new Date().getMinutes() - 11);
                     }
-                    if(Minutes <= 10){
-                        await Adapter.GetAllInfo();
+                    else{
+                        Adapter.log.debug("Car fall asleep successfully, will leave him alone for a while...");
                     }
-                    else if(Minutes > 10 && Minutes <= 25){
-                        // Dont do anything, try to let the car sleep...
-                    }
-                    else if(Minutes > 25){
-                        // Check if car is still awake. If so, request once and then go back to "let it sleep"
-                        let standby = await Adapter.getStateAsync('command.standby');
-                        if(standby && !standby.val && standby.ack){
-                            await Adapter.GetAllInfo();
-                            this.lastTimeWokeUp = new Date();
-                            this.lastTimeWokeUp.setMinutes(new Date().getMinutes() - 11);
-                        }
-                    }
-                    else if(Minutes > 60*12){
-                        await Adapter.GetAllInfo();
-                    }
-                }, 60 * 1000);
+                }
+                else if(Minutes > 60 * 12){
+                    Adapter.log.debug("Car was sleeping for > 12 hours, Update information");
+                    await Adapter.GetAllInfo();
+                }
+
+                Adapter.RefreshAllInfoTimeout = setTimeout(() => Adapter.RefreshAllInfoTask(), 60 * 1000); // check every minute
                 break;
         }
-
-        setInterval(async () => {
-            if(Adapter.refreshData){
-                Adapter.refreshData = false;
-                await Adapter.GetAllInfo();
-            }
-        },1000); // Check if we are asked for a refresh
     }
 
-    /**
-     * Is called when adapter shuts down - callback has to be called under any circumstances!
-     */
-    onUnload(callback){
-        try{
-            this.log.info('cleaned everything up...');
-            callback();
-        }catch(e){
-            callback();
-        }
-    }
 
     /**
      * Is called if a subscribed state changes
@@ -239,13 +256,13 @@ class TeslaMotors extends utils.Adapter {
                     break;
                 case 'command.Charging':
                     if(state.val){
-                        let charge = await tjs.startChargeAsync(options).catch((err)=>{
-                            Adapter.log.error('Err:'+err);
+                        let charge = await tjs.startChargeAsync(options).catch((err) => {
+                            Adapter.log.error('Err:' + err);
                         });
                         if(charge.result === false){
                             Adapter.setState('command.Charging', false, true);
                         }
-                        else {
+                        else{
                             Adapter.setState('command.Charging', true, true);
                         }
                     }
@@ -429,20 +446,26 @@ class TeslaMotors extends utils.Adapter {
 
     async RefreshToken(){
         const Adapter = this;
-
+        Adapter.log.debug("Check for Tokens and Expires");
         let Expires = new Date(Adapter.config.tokenExpire);
         Expires.setDate(Expires.getDate() - 10); // Refresh 10 days before expire
-        if(Expires < new Date()){
+        if(Adapter.config.authToken.length > 0 && Expires < new Date()){
             tjs.refreshToken(Adapter.config.refreshToken, async (err, result) => {
-                if(result.response.statusCode !== 200){
+                if(!result || !result.response || result.response.statusCode !== 200){
                     Adapter.log.warn('Could not refresh Token, trying to get a new Token');
                     await Adapter.setStateAsync('info.connection', false, true);
-                    Adapter.GetNewToken();
+                    await Adapter.GetNewToken();
                 }
                 else{
                     await Adapter.SetNewToken(result.authToken, result.refreshToken, result.body.expires_in);
                 }
             })
+        }
+        else if(Adapter.config.authToken.length === 0){
+            await Adapter.setStateAsync('info.connection', false, true);
+        }
+        else{
+            await Adapter.setStateAsync('info.connection', true, true);
         }
     }
 
@@ -473,38 +496,43 @@ class TeslaMotors extends utils.Adapter {
      * Get all info that are available while car is sleeping
      * @constructor
      */
-    async GetSleepingInfo(){
+    async GetStandbyInfo(){
         const Adapter = this;
         const State = await Adapter.getStateAsync('info.connection');
         if(!State){
             Adapter.log.warn('You tried to get States, but there is currently no valid Token, please configure Adapter first!');
             return;
         }
-        Adapter.log.debug("Getting Sleeping Info");
+        Adapter.log.debug("Getting Standby Info");
 
         await new Promise(async resolve => {
             let vehicleIndex = 0;
-            Adapter.config.vehicles.forEach(function(vehicle,idx) {
+            Adapter.config.vehicles.forEach(function(vehicle, idx){
                 if(vehicle["id_s"] === Adapter.config.vehicle_id_s){
                     vehicleIndex = idx;
                 }
             });
             let options = {
                 authToken: Adapter.config.authToken,
-                carIndex: vehicleIndex};
+                carIndex: vehicleIndex
+            };
+            let vehicle;
+            try{
+                vehicle = await tjs.vehicleAsync(options);
+            }
+            catch(err){
+                Adapter.log.warn('Invalid answer from Vehicle request. Error: ' + err);
+                return resolve();
+            }
 
-            let vehicle = await tjs.vehicleAsync(options).catch(err => {
-                Adapter.log.error('Invalid answer from Vehicle request. Error: ' + err);
-                resolve();
-            });
             Adapter.log.debug('vehicle Answer:' + JSON.stringify(vehicle));
 
-            Adapter.setState('vehicle.id_s', vehicle.id_s, true);
-            Adapter.setState('vehicle.vin', vehicle.vin, true);
-            Adapter.setState('vehicle.display_name', vehicle.display_name, true);
-            Adapter.setState('command.standby', 'online' !== vehicle.state, true);
-            Adapter.setState('vehicle.option_codes', vehicle.option_codes, true);
-            Adapter.setState('vehicle.color', vehicle.color, true);
+            await Adapter.setStateAsync('vehicle.id_s', vehicle.id_s, true);
+            await Adapter.setStateAsync('vehicle.vin', vehicle.vin, true);
+            await Adapter.setStateAsync('vehicle.display_name', vehicle.display_name, true);
+            await Adapter.setStateAsync('command.standby', 'online' !== vehicle.state, true);
+            await Adapter.setStateAsync('vehicle.option_codes', vehicle.option_codes, true);
+            await Adapter.setStateAsync('vehicle.color', vehicle.color, true);
 
             if(vehicle.state === 'online' && !this.lastWakeState){
                 // Car was sleeping before, but woke up now. So we trigger a refresh of data
@@ -513,7 +541,7 @@ class TeslaMotors extends utils.Adapter {
             }
             this.lastWakeState = vehicle.state === 'online';
             resolve();
-        })
+        });
     }
 
     async WakeItUp(){
@@ -524,10 +552,13 @@ class TeslaMotors extends utils.Adapter {
             return;
         }
         // Check if in standby
-        await Adapter.GetSleepingInfo();
+        await Adapter.GetStandbyInfo();
         let standby;
         standby = await Adapter.getStateAsync('command.standby');
-        if(standby && !standby.val && standby.ack) return;
+        if(standby && !standby.val && standby.ack){
+            Adapter.log.debug("Wanted to wake up the car, but car is already awake.");
+            return;
+        }
 
         await new Promise(async resolve => {
             Adapter.log.debug('Waking up the car...');
@@ -535,7 +566,7 @@ class TeslaMotors extends utils.Adapter {
                 authToken: Adapter.config.authToken,
                 vehicleID: Adapter.config.vehicle_id_s
             };
-            tjs.wakeUp(options, async (err, data) => {
+            await tjs.wakeUp(options, async (err, data) => {
                 Adapter.WakeItUpRetryCount--;
                 Adapter.log.debug("Wake up Response:" + JSON.stringify(data) + JSON.stringify(err));
                 if(err || data.state !== "online"){
@@ -548,15 +579,14 @@ class TeslaMotors extends utils.Adapter {
                         Adapter.log.warn("Was not able to wake up the car within 50 Seconds. Car has maybe not internet connection");
                         Adapter.WakeItUpRetryCount = 30;
                     }
-                    resolve();
                 }
                 else{
                     Adapter.log.debug("Car is Awake");
-                    Adapter.setState('command.standby', false, true);
+                    await Adapter.setStateAsync('command.standby', false, true);
                     Adapter.WakeItUpRetryCount = 30;
-                    resolve();
                 }
             });
+            resolve();
         });
     }
 
@@ -573,19 +603,24 @@ class TeslaMotors extends utils.Adapter {
             authToken: Adapter.config.authToken,
             vehicleID: Adapter.config.vehicle_id_s
         };
-        let vd = await new Promise(async (resolve, reject) => {
-            tjs.vehicleData(options, (err, data) => {
-                Adapter.log.debug("Answer from vehicleState:" + JSON.stringify(data) + JSON.stringify(err));
-                if(err){
-                    reject(err);
-                }
-                else{
-                    resolve(data);
-                }
+        let vd;
+        try{
+            vd = await new Promise(async (resolve, reject) => {
+                tjs.vehicleData(options, (err, data) => {
+                    Adapter.log.debug("Answer from vehicleState:" + JSON.stringify(data) + JSON.stringify(err));
+                    if(err){
+                        reject(err);
+                    }
+                    else{
+                        resolve(data);
+                    }
+                });
             });
-        }).catch(error => {
+        }
+        catch(error){
             Adapter.log.warn('Could not retrieve Data from the Car! Response: ' + error);
-        });
+            return;
+        }
 
         Adapter.log.debug("Vehicle Data: " + JSON.stringify(vd));
 
@@ -623,7 +658,7 @@ class TeslaMotors extends utils.Adapter {
         if(vd.charge_state.charging_state === 'Charging'){
             Adapter.setState('command.Charging', true, true);
         }
-        else if(vd.charge_state.charging_state === 'Disconnected' || vd.charge_state.charging_state === 'Stopped') {
+        else if(vd.charge_state.charging_state === 'Disconnected' || vd.charge_state.charging_state === 'Stopped'){
             Adapter.setState('command.Charging', false, true);
         }
         Adapter.setState('chargeState.battery_level', vd.charge_state.battery_level, true);
@@ -667,11 +702,11 @@ class TeslaMotors extends utils.Adapter {
         Adapter.setState('driveState.latitude', vd.drive_state.latitude, true);
         Adapter.setState('driveState.longitude', vd.drive_state.longitude, true);
         Adapter.setState('driveState.heading', vd.drive_state.heading, true);
-        Adapter.setState('driveState.gps_as_of', vd.drive_state.gps_as_of, true);
+        Adapter.setState('driveState.gps_as_of', vd.drive_state.gps_as_of * 1000, true);
 
 
         Adapter.setState('vehicle.is_user_present', vd.vehicle_state.is_user_present, true);
-        Adapter.setState('vehicle.odometer', vd.vehicle_state.odometer, true);
+        Adapter.setState('vehicle.odometer', Adapter.m_km(vd.vehicle_state.odometer), true);
         Adapter.setState('vehicle.car_type', vd.vehicle_config.car_type, true);
 
         Adapter.setState('softwareUpdate.download_percentage', vd.vehicle_state.software_update.download_perc, true);
@@ -712,20 +747,20 @@ class TeslaMotors extends utils.Adapter {
             let spmax = Adapter.m_km(vd.vehicle_state.speed_limit_mode.max_limit_mph);
             let spmin = Adapter.m_km(vd.vehicle_state.speed_limit_mode.min_limit_mph);
 
-            await Adapter.setObjectAsync('command.SpeedLimitValue', {
+
+            await Adapter.extendObjectAsync('command.SpeedLimitValue', {
                 type: 'state',
                 common: {
                     name: 'Limit car Speed',
                     desc: 'Min ' + spmin + Adapter.distanceUnit + ', Max ' + spmax + Adapter.distanceUnit,
                     type: 'number',
-                    role: 'value.speed',
+                    role: 'state',
                     unit: Adapter.distanceUnit,
-                    read: true,
                     write: true,
                     min: spmin,
                     max: spmax
                 },
-                native: []
+                native: {}
             });
         }
     }
@@ -740,685 +775,61 @@ class TeslaMotors extends utils.Adapter {
         else return Math.round(value / 1.60934);
     }
 
-    async installObjects(){
-        let SleepStates = [ // States that can be retrieved while car is sleeping
-            // commands
-            {
-                id: 'command.standby',
-                name: 'Wake up State',
-                type: 'boolean',
-                role: 'info.standby',
-                read: true,
-                write: true
-            },
-
-            // states read only
-            {
-                id: 'vehicle.id_s',
-                name: 'API Identifier of the car',
-                type: 'string',
-                role: 'info.address',
-                read: true,
-                write: false
-            },
-            {id: 'vehicle.vin', name: 'VIN', type: 'string', role: 'info.address', read: true, write: false},
-            {
-                id: 'vehicle.display_name',
-                name: 'Your car name',
-                type: 'string',
-                role: 'info.name',
-                read: true,
-                write: false
-            },
-            {
-                id: 'vehicle.option_codes',
-                name: 'List of option codes of your car',
-                desc: 'Check them on https://tesla-api.timdorr.com/vehicle/optioncodes',
-                type: 'string',
-                role: 'text',
-                read: true,
-                write: false
-            },
-            {id: 'vehicle.color', name: 'Color of your car', type: 'string', role: 'text', read: true, write: false},
-        ];
-        let AwakeStates = [ // States that need to wake up the car to be read
-            // commands
-            {
-                id: 'command.doorLock',
-                name: 'Door Lock',
-                desc: 'true - open, false - close',
-                type: 'boolean',
-                role: 'switch.lock.door',
-                read: true,
-                write: true
-            },
-            {
-                id: 'command.honkHorn',
-                name: 'Honk Horn',
-                type: 'boolean',
-                role: 'button',
-                def: false,
-                read: false,
-                write: true
-            },
-            {
-                id: 'command.flashLights',
-                name: 'Flash Lights',
-                type: 'boolean',
-                role: 'button',
-                def: false,
-                read: false,
-                write: true
-            },
-            {
-                id: 'command.Climate',
-                name: 'Climate',
-                desc: 'Turn on climate to pre-set temperature',
-                type: 'boolean',
-                role: 'switch.power',
-                read: true,
-                write: true
-            },
-            {
-                id: 'command.SetChargeLimit',
-                name: 'Set Charge Limit',
-                type: 'number',
-                role: 'level',
-                unit: '%',
-                read: true,
-                write: true,
-                min: 50,
-                max: 100
-            },
-            {
-                id: 'command.ChargePort',
-                name: 'Open / Close charge Port',
-                type: 'boolean',
-                role: 'switch.lock',
-                read: true,
-                write: true
-            },
-            {
-                id: 'command.UnlockChargePort',
-                name: 'Unlock charge Port',
-                type: 'boolean',
-                role: 'switch.lock',
-                read: false,
-                write: true
-            },
-            {
-                id: 'command.Charging',
-                name: 'Charging state',
-                type: 'boolean',
-                role: 'switch.enable',
-                read: true,
-                write: true
-            },
-            {
-                id: 'command.ValetMode',
-                name: 'Enable valet Mode',
-                type: 'boolean',
-                role: 'switch.enable',
-                read: true,
-                write: true
-            },
-            {id: 'command.ValetPin', name: 'Pin for Valet Mode', type: 'string', def: '????', read: true, write: true},
-            {
-                id: 'command.SpeedLimit',
-                name: 'Limit max. car Speed',
-                desc: 'Set Limit with "SpeedLimitValue"',
-                type: 'boolean',
-                role: 'switch.enable',
-                read: true,
-                write: true
-            },
-            {
-                id: 'command.SentryMode',
-                name: 'Enable Sentry Mode',
-                type: 'boolean',
-                role: 'switch.enable',
-                read: true,
-                write: true
-            },
-            {
-                id: 'command.RemoteStart',
-                name: 'Enable Remote Start',
-                type: 'boolean',
-                role: 'switch.enable',
-                read: true,
-                write: true
-            },
-            {
-                id: 'command.StartSoftwareUpdate',
-                name: 'Start Software Update',
-                desc: 'Software need to be available (Download 100%)',
-                type: 'boolean',
-                role: 'button.start',
-                read: true,
-                write: true
-            },
-            {
-                id: 'command.seat_heater_left',
-                name: 'Left seat heater',
-                desc: 'Level of Seat heater (0 = off, 3 = max)',
-                type: 'number',
-                role: 'level',
-                read: true,
-                write: true,
-                min: 0,
-                max: 3
-            },
-            {
-                id: 'command.seat_heater_right',
-                name: 'Right seat heater',
-                desc: 'Level of Seat heater (0 = off, 3 = max)',
-                type: 'number',
-                role: 'level',
-                read: true,
-                write: true,
-                min: 0,
-                max: 3
-            },
-            {
-                id: 'command.steering_wheel_heater',
-                name: 'Steering wheel heater',
-                type: 'boolean',
-                role: 'switch.enable',
-                read: true,
-                write: true
-            },
-            {
-                id: 'command.windowVent',
-                name: 'Vent Window',
-                desc: 'Hint: Can also be used to close all windows',
-                type: 'boolean',
-                role: 'switch.lock.window',
-                read: true,
-                write: true
-            },
-            {
-                id: 'command.openTrunk',
-                name: 'Open trunk',
-                type: 'boolean',
-                role: 'button.open.door',
-                read: true,
-                write: true
-            },
-            {
-                id: 'command.openFrunk',
-                name: 'Open frunk (front trunk)',
-                type: 'boolean',
-                role: 'button.open.door',
-                read: true,
-                write: true
-            },
-
-            // states read only
-            {
-                id: 'chargeState.charging_state',
-                name: 'Charging State',
-                type: 'string',
-                role: 'state',
-                read: true,
-                write: false
-            },
-            {
-                id: 'chargeState.battery_level',
-                name: 'Battery level',
-                type: 'number',
-                role: 'value.battery',
-                unit: '%',
-                read: true,
-                write: false,
-                min: 0,
-                max: 100
-            },
-
-
-            {
-                id: 'chargeState.scheduled_charging_start_time',
-                name: 'Scheduled charge start Time',
-                desc: 'Current Format: yyyy-MM-ddTHH:mm:ss (But can be changed by Tesla anytime)',
-                type: 'string',
-                role: 'date.start',
-                read: true,
-                write: false
-            },
-            {
-                id: 'chargeState.battery_heater_on',
-                name: 'Battery heater State',
-                type: 'boolean',
-                role: 'indicator',
-                read: true,
-                write: false
-            },
-            {
-                id: 'chargeState.minutes_to_full_charge',
-                name: 'Minutes to fully Charge',
-                type: 'number',
-                role: 'value',
-                read: true,
-                write: false
-            },
-            {
-                id: 'chargeState.fast_charger_present',
-                name: 'Fast Charger connected',
-                type: 'boolean',
-                role: 'indicator',
-                read: true,
-                write: false
-            },
-            {
-                id: 'chargeState.usable_battery_level',
-                name: 'Usable battery level',
-                type: 'number',
-                role: 'value.battery',
-                unit: '%',
-                read: true,
-                write: false,
-                min: 0,
-                max: 100
-            },
-            {
-                id: 'chargeState.charge_energy_added',
-                name: 'Energy added with last Charge',
-                type: 'number',
-                role: 'value',
-                unit: 'kWh',
-                read: true,
-                write: false
-            },
-            {
-                id: 'chargeState.charger_voltage',
-                name: 'Charger Voltage',
-                type: 'number',
-                role: 'value.voltage',
-                unit: 'V',
-                read: true,
-                write: false
-            },
-            {
-                id: 'chargeState.charger_power',
-                name: 'Charger Power',
-                type: 'number',
-                role: 'value',
-                unit: 'W',
-                read: true,
-                write: false
-            },
-            {
-                id: 'chargeState.charge_current_request',
-                name: 'Charge current requested',
-                type: 'number',
-                role: 'value.current',
-                unit: 'A',
-                read: true,
-                write: false
-            },
-            {
-                id: 'chargeState.charge_port_cold_weather_mode',
-                name: 'Charge port cold weather mode',
-                type: 'boolean',
-                role: 'indicator',
-                read: true,
-                write: false
-            },
-
-
-            {
-                id: 'climateState.inside_temp',
-                name: 'Inside Temperature',
-                type: 'number',
-                role: 'value.temperature',
-                unit: '°C',
-                read: true,
-                write: false
-            },
-            {
-                id: 'climateState.outside_temp',
-                name: 'Ouside Temperature',
-                type: 'number',
-                role: 'value.temperature',
-                unit: '°C',
-                read: true,
-                write: false
-            },
-            {
-                id: 'climateState.max_avail_temp',
-                name: 'Max. available inside Temperature',
-                type: 'number',
-                role: 'value.temperature',
-                unit: '°C',
-                read: true,
-                write: false
-            },
-            {
-                id: 'climateState.min_avail_temp',
-                name: 'Min. available inside Temperature',
-                type: 'number',
-                role: 'value.temperature',
-                unit: '°C',
-                read: true,
-                write: false
-            },
-            {
-                id: 'climateState.sun_roof_installed',
-                name: 'Sun Roof Installed',
-                type: 'boolean',
-                role: 'indicator',
-                read: true,
-                write: false
-            },
-
-            {
-                id: 'climateState.front_driver_window',
-                name: 'Front driver window state',
-                type: 'boolean',
-                role: 'sensor.window',
-                read: true,
-                write: false
-            },
-            {
-                id: 'climateState.front_passenger_window',
-                name: 'Front passenger window state',
-                type: 'boolean',
-                role: 'sensor.window',
-                read: true,
-                write: false
-            },
-            {
-                id: 'climateState.rear_driver_window',
-                name: 'Rear driver window state',
-                type: 'boolean',
-                role: 'sensor.window',
-                read: true,
-                write: false
-            },
-            {
-                id: 'climateState.rear_passenger_window',
-                name: 'Front Passenger window state',
-                type: 'boolean',
-                role: 'sensor.window',
-                read: true,
-                write: false
-            },
-
-
-            {
-                id: 'climateState.wiper_blade_heater',
-                name: 'Wiper blade heater',
-                type: 'boolean',
-                role: 'indicator',
-                read: true,
-                write: false
-            },
-            {
-                id: 'climateState.side_mirror_heaters',
-                name: 'Side mirrors heaters',
-                type: 'boolean',
-                role: 'indicator',
-                read: true,
-                write: false
-            },
-            {
-                id: 'climateState.is_preconditioning',
-                name: 'Is preconditioning',
-                type: 'boolean',
-                role: 'indicator',
-                read: true,
-                write: false
-            },
-            {
-                id: 'climateState.smart_preconditioning',
-                name: 'Smart preconditioning',
-                type: 'boolean',
-                role: 'indicator',
-                read: true,
-                write: false
-            },
-            {
-                id: 'climateState.is_auto_conditioning_on',
-                name: 'Auto conditioning',
-                type: 'boolean',
-                role: 'indicator',
-                read: true,
-                write: false
-            },
-            {
-                id: 'climateState.battery_heater',
-                name: 'Battery heater',
-                type: 'boolean',
-                role: 'indicator',
-                read: true,
-                write: false
-            },
-
-            {
-                id: 'driveState.shift_state',
-                name: 'Shift State',
-                type: 'string',
-                role: 'indicator',
-                read: true,
-                write: false
-            },
-
-            {
-                id: 'driveState.power',
-                name: 'Power',
-                type: 'number',
-                role: 'value.power.consumption',
-                unit: 'Wh',
-                read: true,
-                write: false
-            },
-            {
-                id: 'driveState.latitude',
-                name: 'Current position latitude',
-                type: 'number',
-                role: 'value.gps.latitude',
-                read: true,
-                write: false
-            },
-            {
-                id: 'driveState.longitude',
-                name: 'Current position longitude',
-                type: 'number',
-                role: 'value.gps.longitude',
-                read: true,
-                write: false
-            },
-            {
-                id: 'driveState.heading',
-                name: 'Car heading',
-                type: 'number',
-                role: 'value.direction',
-                unit: '°deg',
-                read: true,
-                write: false,
-                min: 0,
-                max: 360
-            },
-            {
-                id: 'driveState.gps_as_of',
-                name: 'Timestamp of last gps position',
-                type: 'number',
-                role: 'value.time',
-                read: true,
-                write: false
-            },
-            {
-                id: 'vehicle.is_user_present',
-                name: 'Is user present',
-                type: 'boolean',
-                role: 'indicator',
-                read: true,
-                write: false
-            },
-            {id: 'vehicle.car_type', name: 'Car Type', type: 'string', role: 'text', read: true, write: false},
-
-            {
-                id: 'softwareUpdate.download_percentage',
-                name: 'Software download in %',
-                type: 'number',
-                role: 'level',
-                unit: '%',
-                read: true,
-                write: false,
-                min: 0,
-                max: 100
-            },
-            {
-                id: 'softwareUpdate.expected_duration_sec',
-                name: 'Update expected duration',
-                type: 'number',
-                role: 'value',
-                unit: 'sec',
-                read: true,
-                write: false
-            },
-            {
-                id: 'softwareUpdate.install_percentage',
-                name: 'Installation in %',
-                type: 'number',
-                role: 'level',
-                unit: '%',
-                read: true,
-                write: false,
-                min: 0,
-                max: 100
-            },
-            {
-                id: 'softwareUpdate.status',
-                name: 'Update Status',
-                type: 'string',
-                role: 'state',
-                read: true,
-                write: false
-            },
-            {
-                id: 'softwareUpdate.version',
-                name: 'Update Version',
-                type: 'string',
-                role: 'text',
-                read: true,
-                write: false
-            },
-        ];
-
-        await this.createObjects(SleepStates);
-        await this.createObjects(AwakeStates);
-    }
 
     async installDistanceObjects(){
         const Adapter = this;
-        let AwakeDependantStates = [
-            // States that need information about Distance format
-            {
-                id: 'driveState.SpeedLimitMax',
-                name: 'Speed limit Max settable',
-                type: 'number',
-                role: 'value.speed',
-                unit: Adapter.distanceUnit,
-                read: true,
-                write: false
-            },
-            {
-                id: 'driveState.SpeedLimitMin',
-                name: 'Speed limit Min settable',
-                type: 'number',
-                role: 'value.speed',
-                unit: Adapter.distanceUnit,
-                read: true,
-                write: false
-            },
-            {
-                id: 'chargeState.battery_range',
-                name: 'Battery Range',
-                type: 'number',
-                role: 'value.distance',
-                unit: Adapter.distanceUnit.substr(0, Adapter.distanceUnit.indexOf('/')),
-                read: true,
-                write: false
-            },
-            {
-                id: 'chargeState.est_battery_range',
-                name: 'Estimated Battery Range',
-                type: 'number',
-                role: 'value.distance',
-                unit: Adapter.distanceUnit.substr(0, Adapter.distanceUnit.indexOf('/')),
-                read: true,
-                write: false
-            },
-            {
-                id: 'chargeState.ideal_battery_range',
-                name: 'Ideal Battery Range',
-                type: 'number',
-                role: 'value.distance',
-                unit: Adapter.distanceUnit.substr(0, Adapter.distanceUnit.indexOf('/')),
-                read: true,
-                write: false
-            },
-            {
-                id: 'chargeState.charge_distance_added_rated',
-                name: 'Distance added with Charge',
-                type: 'number',
-                role: 'value.distance',
-                unit: Adapter.distanceUnit.substr(0, Adapter.distanceUnit.indexOf('/')),
-                read: true,
-                write: false
-            },
-
-            {
-                id: 'driveState.speed',
-                name: 'Speed',
-                type: 'number',
-                role: 'value.speed',
-                unit: Adapter.distanceUnit,
-                read: true,
-                write: false
-            },
-            {
-                id: 'vehicle.odometer',
-                name: 'Odometer',
-                type: 'number',
-                role: 'value.distance',
-                unit: Adapter.distanceUnit.substr(0, Adapter.distanceUnit.indexOf('/')),
-                read: true,
-                write: false
-            }
-        ];
-        await this.overwriteObjects(AwakeDependantStates);
+        const rangeUnit = Adapter.distanceUnit.substr(0, Adapter.distanceUnit.indexOf('/'));
+        await this.extendObjectAsync('driveState.SpeedLimitMax',
+            {common: {unit: Adapter.distanceUnit}}
+        );
+        await this.extendObjectAsync('driveState.SpeedLimitMin',
+            {common: {unit: Adapter.distanceUnit}}
+        );
+        await this.extendObjectAsync('chargeState.battery_range',
+            {common: {unit: rangeUnit}}
+        );
+        await this.extendObjectAsync('chargeState.est_battery_range',
+            {common: {unit: rangeUnit}}
+        );
+        await this.extendObjectAsync('chargeState.ideal_battery_range',
+            {common: {unit: rangeUnit}}
+        );
+        await this.extendObjectAsync('chargeState.charge_distance_added_rated',
+            {common: {unit: rangeUnit}}
+        );
+        await this.extendObjectAsync('driveState.speed',
+            {common: {unit: Adapter.distanceUnit}}
+        );
+        await this.extendObjectAsync('vehicle.odometer',
+            {common: {unit: rangeUnit}}
+        );
     }
 
     async installDependantObjects(vd){
-        await this.overwriteObjects([{
-            id: 'command.SetTemperature',
-            name: 'Set Temperature',
-            desc: 'Sets temperature of driver and passenger',
-            type: 'number',
-            role: 'value.temperature',
-            unit: '°C',
-            read: true,
-            write: true,
-            min: vd.climate_state.min_avail_temp,
-            max: vd.climate_state.max_avail_temp
-        }]);
+        await this.extendObjectAsync('command.SetTemperature', {
+            common: {
+                min: vd.climate_state.min_avail_temp,
+                max: vd.climate_state.max_avail_temp
+            }
+        });
 
         if(vd.vehicle_config.rear_seat_heaters === 1){
-            await this.overwriteObjects([
-                {
-                    id: 'command.seat_heater_rear_center',
+            await this.setObjectNotExistsAsync('command.seat_heater_rear_center', {
+                type: "state",
+                common: {
                     name: 'Rear center seat heater',
                     desc: 'Level of Seat heater (0 = off, 3 = max)',
                     type: 'number',
                     role: 'level',
-                    read: true,
                     write: true,
                     min: 0,
                     max: 3
                 },
-                {
-                    id: 'command.seat_heater_rear_left',
+                native: {}
+            });
+            await this.setObjectNotExistsAsync('command.seat_heater_rear_left', {
+                type: "state",
+                common: {
                     name: 'Rear left seat heater',
                     desc: 'Level of Seat heater (0 = off, 3 = max)',
                     type: 'number',
@@ -1428,8 +839,11 @@ class TeslaMotors extends utils.Adapter {
                     min: 0,
                     max: 3
                 },
-                {
-                    id: 'command.seat_heater_rear_right',
+                native: {}
+            });
+            await this.setObjectNotExistsAsync('command.seat_heater_rear_right', {
+                type: "state",
+                common: {
                     name: 'Rear right seat heater',
                     desc: 'Level of Seat heater (0 = off, 3 = max)',
                     type: 'number',
@@ -1439,70 +853,36 @@ class TeslaMotors extends utils.Adapter {
                     min: 0,
                     max: 3
                 },
-            ]);
+                native: {}
+            });
         }
         if(vd.vehicle_config.sun_roof_installed){
-            await this.overwriteObjects([{
-                id: 'command.SunRoofVent',
-                name: 'Sun Roof Vent',
-                type: 'boolean',
-                role: 'switch.lock',
-                read: true,
-                write: true
-            }]);
+            await this.setObjectNotExistsAsync('command.SunRoofVent', {
+                type: "state",
+                common: {
+                    name: 'Sun Roof Vent',
+                    type: 'boolean',
+                    role: 'switch.lock',
+                    write: true
+                },
+                native: {}
+            });
         }
 
         if(vd.vehicle_config.sun_roof_installed){
-            await this.overwriteObjects([{
-                id: 'climateState.sun_roof_percent_open',
-                name: 'Sun Roof % open',
-                type: 'number',
-                role: 'level.tilt',
-                unit: '%',
-                read: true,
-                write: false
-            }]);
+            await this.setObjectNotExistsAsync('climateState.sun_roof_percent_open', {
+                type: "state",
+                common: {
+                    name: 'Sun Roof % open',
+                    type: 'number',
+                    role: 'level.tilt',
+                    unit: '%',
+                    write: false
+                },
+                native: {}
+            });
         }
     }
-
-    async createObjects(objects){
-        await objects.forEach(async (object) => {
-            let id = object.id;
-            delete object.id;
-            this.setObjectNotExistsAsync(id, {
-                type: 'state',
-                common: object,
-                native: []
-            });
-        })
-    }
-
-    async overwriteObjects(objects){
-        await objects.forEach(async (object) => {
-            let id = object.id;
-            delete object.id;
-            this.setObjectAsync(id, {
-                type: 'state',
-                common: object,
-                native: []
-            });
-        })
-    }
-
-
-    /**
-     * type "number" | "string" | "boolean" | "array" | "object" | "mixed" | "file"
-     */
-    setStateCreate(id, name, role, state, type = 'string', write = true, read = true, unit = ''){
-        this.setObjectNotExists(id, {
-            type: 'state',
-            common: {name: name, type: type, role: role, unit: unit, read: read, write: write},
-            native: []
-        });
-        this.setState(id, state, true);
-    }
-
-
 }
 
 // @ts-ignore parent is a valid property on module
@@ -1515,7 +895,7 @@ else{
     new TeslaMotors();
 }
 
-function Sleep(milliseconds) {
+function Sleep(milliseconds){
     return new Promise(resolve => setTimeout(resolve, milliseconds));
 }
 
