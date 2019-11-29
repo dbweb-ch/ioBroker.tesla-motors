@@ -24,60 +24,89 @@ class TeslaMotors extends utils.Adapter {
 
         // Timeouts and intervals
         this.RefreshTokenTimeout = null;
+        this.RefreshRequestTimeout = null;
+        this.GetStandbyInfoTimeout = null;
+        this.RefreshAllInfoTimeout = null;
     }
 
     /**
      * Is called when databases are connected and adapter received configuration.
      */
     async onReady(){ //
+        this.log.debug('Starting Tesla Motors');
         const Adapter = this;
+        await Adapter.setStateAsync('info.connection', false, true);
 
         await Adapter.installObjects();
+
+        this.log.debug('All Objects installed, setting up tasks now');
+
         this.subscribeStates('command.*');
-        this.log.debug('Starting Tesla Motors');
-        Adapter.log.debug("Check for Tokens and Expires");
 
-        let Expires = new Date(Adapter.config.tokenExpire);
-        Expires.setDate(Expires.getDate() - 10);
-
-        if(Adapter.config.authToken.length === 0){
-            await Adapter.setStateAsync('info.connection', false, true);
-        }
-        else if(Expires < new Date()){
-            await this.RefreshToken();
-        }
-        else{
-            await Adapter.setStateAsync('info.connection', true, true);
-            Adapter.log.debug("Connected to Tesla");
-        }
-
-        Adapter.log.debug("Everything initialized, setting up wakeUp strategy");
-        Adapter.SetupWakeupStrategy();
-        Adapter.refreshData = true;
+        // Setup Tasks
+        await Adapter.RefreshTokenTask();
+        await Adapter.RefreshStandbyInfoTask();
+        await Adapter.RefreshAllInfoTask();
+        await Adapter.CheckRefreshRequestTask();
     }
 
-    async SetupWakeupStrategy(){
+    onUnload(callback){
         const Adapter = this;
-        // Check for Token refresh on startup
-        await Adapter.RefreshToken();
+        try{
+            this.log.info('cleaned everything up...');
+            if(Adapter.RefreshTokenTimeout){
+                clearTimeout(Adapter.RefreshTokenTimeout);
+            }
+            if(Adapter.RefreshRequestTimeout){
+                clearTimeout(Adapter.RefreshRequestTimeout);
+            }
+            if(Adapter.GetStandbyInfoTimeout){
+                clearTimeout(Adapter.GetStandbyInfoTimeout);
+            }
+            if(Adapter.RefreshAllInfoTimeout){
+                clearTimeout(Adapter.RefreshAllInfoTimeout);
+            }
 
-        // Get sleeping info once per minute
-        await Adapter.GetSleepingInfo();
-        setInterval(() => {
-            Adapter.GetSleepingInfo();
-        }, 60 * 1000);
+            callback();
+        }catch(e){
+            callback();
+        }
+    }
 
-        // Setting up Interval based on wakeup-Plan
+    async RefreshTokenTask(){
+        this.log.debug('Checking if token is valid');
+        await this.RefreshToken();
+        // Check again in 1 Day.
+        this.RefreshTokenTimeout = setTimeout(this.RefreshTokenTask, 24 * 60 * 60 * 1000);
+    }
+
+    async RefreshStandbyInfoTask(){
+        await this.GetStandbyInfo();
+        // Check every minute the standby Info
+        this.GetStandbyInfoTimeout = setTimeout(this.GetStandbyInfo, 24 * 60 * 60 * 1000);
+    }
+
+    async CheckRefreshRequestTask(){
+        if(this.refreshData){
+            this.log.debug('Refresh of full Data requested');
+            this.refreshData = false;
+            await this.GetAllInfo();
+        }
+        this.RefreshRequestTimeout = setTimeout(this.CheckRefreshRequestTask, 1000);
+    }
+
+    async RefreshAllInfoTask(){
+        const Adapter = this;
+        this.log.debug('Refresh of all in Task run. Current wakeupPlan is "' + Adapter.config.wakeupPlan + '"');
+        // Setting up Timeouts based on wakeup-Plan
         switch(Adapter.config.wakeupPlan){
             case 'aggressive':
-                setInterval(() => {
-                    Adapter.GetAllInfo();
-                }, 60 * 1000); // Once per Minute
+                await Adapter.GetAllInfo();
+                Adapter.RefreshAllInfoTimeout = setTimeout(Adapter.RefreshAllInfoTask, 60 * 1000); // once per minute
                 break;
             case 'temperate':
-                setInterval(() => {
-                    Adapter.GetAllInfo();
-                }, 60 * 60 * 1000); // Once per Hour
+                await Adapter.GetAllInfo();
+                Adapter.RefreshAllInfoTimeout = setTimeout(Adapter.RefreshAllInfoTask, 60 * 60 * 1000); // once per hour
                 break;
             case 'off':
                 // Only get data when something changes or car is awake anyway (Done in GetSleepingInfo)
@@ -93,65 +122,43 @@ class TeslaMotors extends utils.Adapter {
                  *
                  * The whole thing is 1-minute-timer-based, so we do this stuff every minute
                  */
-                setInterval(async () => {
-                    let Minutes = Math.floor((new Date().getTime() - this.lastTimeWokeUp.getTime()) / 60000);
-                    // if car is in use, set lastTimeWokeUp to 0
-                    let shift_state = await Adapter.getStateAsync('driveState.shift_state');
-                    let speed = await Adapter.getStateAsync('driveState.speed');
-                    let climate = await Adapter.getStateAsync('command.Climate');
-                    let chargeState = await Adapter.getStateAsync('chargeState.charging_state');
+                let Minutes = Math.floor((new Date().getTime() - this.lastTimeWokeUp.getTime()) / 60000);
+                // if car is in use, set lastTimeWokeUp to 0
+                let shift_state = await Adapter.getStateAsync('driveState.shift_state');
+                let speed = await Adapter.getStateAsync('driveState.speed');
+                let climate = await Adapter.getStateAsync('command.Climate');
+                let chargeState = await Adapter.getStateAsync('chargeState.charging_state');
 
-                    if((shift_state && shift_state.val !== null && shift_state.val !== "P") ||
-                        (speed && speed.val > 0) ||
-                        (climate && climate.val) ||
-                        (chargeState && chargeState.val !== 'Disconnected' && chargeState.val !== 'Complete')){
+                if((shift_state && shift_state.val !== null && shift_state.val !== "P") ||
+                    (speed && speed.val > 0) ||
+                    (climate && climate.val) ||
+                    (chargeState && chargeState.val !== 'Disconnected' && chargeState.val !== 'Complete')){
+                    this.lastTimeWokeUp = new Date();
+                }
+                if(Minutes <= 10){
+                    await Adapter.GetAllInfo();
+                }
+                else if(Minutes > 10 && Minutes <= 25){
+                    // Dont do anything, try to let the car sleep...
+                }
+                else if(Minutes > 25){
+                    // Check if car is still awake. If so, request once and then go back to "let it sleep"
+                    let standby = await Adapter.getStateAsync('command.standby');
+                    if(standby && !standby.val && standby.ack){
+                        await Adapter.GetAllInfo();
                         this.lastTimeWokeUp = new Date();
+                        this.lastTimeWokeUp.setMinutes(new Date().getMinutes() - 11);
                     }
-                    if(Minutes <= 10){
-                        await Adapter.GetAllInfo();
-                    }
-                    else if(Minutes > 10 && Minutes <= 25){
-                        // Dont do anything, try to let the car sleep...
-                    }
-                    else if(Minutes > 25){
-                        // Check if car is still awake. If so, request once and then go back to "let it sleep"
-                        let standby = await Adapter.getStateAsync('command.standby');
-                        if(standby && !standby.val && standby.ack){
-                            await Adapter.GetAllInfo();
-                            this.lastTimeWokeUp = new Date();
-                            this.lastTimeWokeUp.setMinutes(new Date().getMinutes() - 11);
-                        }
-                    }
-                    else if(Minutes > 60*12){
-                        await Adapter.GetAllInfo();
-                    }
-                }, 60 * 1000);
+                }
+                else if(Minutes > 60 * 12){
+                    await Adapter.GetAllInfo();
+                }
+
+                Adapter.RefreshAllInfoTimeout = setTimeout(Adapter.RefreshAllInfoTask, 60 * 1000); // check every minute
                 break;
         }
-
-        setInterval(async () => {
-            if(Adapter.refreshData){
-                Adapter.refreshData = false;
-                await Adapter.GetAllInfo();
-            }
-        },1000); // Check if we are asked for a refresh
     }
 
-    /**
-     * Is called when adapter shuts down - callback has to be called under any circumstances!
-     */
-    onUnload(callback){
-        const Adapter = this;
-        try{
-            this.log.info('cleaned everything up...');
-            if(Adapter.RefreshTokenTimeout){
-                clearTimeout(Adapter.RefreshTokenTimeout);
-            }
-            callback();
-        }catch(e){
-            callback();
-        }
-    }
 
     /**
      * Is called if a subscribed state changes
@@ -241,13 +248,13 @@ class TeslaMotors extends utils.Adapter {
                     break;
                 case 'command.Charging':
                     if(state.val){
-                        let charge = await tjs.startChargeAsync(options).catch((err)=>{
-                            Adapter.log.error('Err:'+err);
+                        let charge = await tjs.startChargeAsync(options).catch((err) => {
+                            Adapter.log.error('Err:' + err);
                         });
                         if(charge.result === false){
                             Adapter.setState('command.Charging', false, true);
                         }
-                        else {
+                        else{
                             Adapter.setState('command.Charging', true, true);
                         }
                     }
@@ -431,7 +438,7 @@ class TeslaMotors extends utils.Adapter {
 
     async RefreshToken(){
         const Adapter = this;
-
+        Adapter.log.debug("Check for Tokens and Expires");
         let Expires = new Date(Adapter.config.tokenExpire);
         Expires.setDate(Expires.getDate() - 10); // Refresh 10 days before expire
         if(Adapter.config.authToken.length > 0 && Expires < new Date()){
@@ -446,8 +453,12 @@ class TeslaMotors extends utils.Adapter {
                 }
             })
         }
-        // Check again in 1 Day.
-        Adapter.RefreshTokenTimeout = setTimeout(Adapter.RefreshToken, 24 * 60 * 60 * 1000);
+        else if(Adapter.config.authToken.length === 0){
+            await Adapter.setStateAsync('info.connection', false, true);
+        }
+        else{
+            await Adapter.setStateAsync('info.connection', true, true);
+        }
     }
 
     async SetNewToken(authToken, refreshToken, tokenExpire){
@@ -477,25 +488,26 @@ class TeslaMotors extends utils.Adapter {
      * Get all info that are available while car is sleeping
      * @constructor
      */
-    async GetSleepingInfo(){
+    async GetStandbyInfo(){
         const Adapter = this;
         const State = await Adapter.getStateAsync('info.connection');
         if(!State){
             Adapter.log.warn('You tried to get States, but there is currently no valid Token, please configure Adapter first!');
             return;
         }
-        Adapter.log.debug("Getting Sleeping Info");
+        Adapter.log.debug("Getting Standby Info");
 
         await new Promise(async resolve => {
             let vehicleIndex = 0;
-            Adapter.config.vehicles.forEach(function(vehicle,idx) {
+            Adapter.config.vehicles.forEach(function(vehicle, idx){
                 if(vehicle["id_s"] === Adapter.config.vehicle_id_s){
                     vehicleIndex = idx;
                 }
             });
             let options = {
                 authToken: Adapter.config.authToken,
-                carIndex: vehicleIndex};
+                carIndex: vehicleIndex
+            };
 
             let vehicle = await tjs.vehicleAsync(options).catch(err => {
                 Adapter.log.error('Invalid answer from Vehicle request. Error: ' + err);
@@ -517,7 +529,7 @@ class TeslaMotors extends utils.Adapter {
             }
             this.lastWakeState = vehicle.state === 'online';
             resolve();
-        })
+        });
     }
 
     async WakeItUp(){
@@ -528,7 +540,7 @@ class TeslaMotors extends utils.Adapter {
             return;
         }
         // Check if in standby
-        await Adapter.GetSleepingInfo();
+        await Adapter.GetStandbyInfo();
         let standby;
         standby = await Adapter.getStateAsync('command.standby');
         if(standby && !standby.val && standby.ack) return;
@@ -627,7 +639,7 @@ class TeslaMotors extends utils.Adapter {
         if(vd.charge_state.charging_state === 'Charging'){
             Adapter.setState('command.Charging', true, true);
         }
-        else if(vd.charge_state.charging_state === 'Disconnected' || vd.charge_state.charging_state === 'Stopped') {
+        else if(vd.charge_state.charging_state === 'Disconnected' || vd.charge_state.charging_state === 'Stopped'){
             Adapter.setState('command.Charging', false, true);
         }
         Adapter.setState('chargeState.battery_level', vd.charge_state.battery_level, true);
@@ -1519,7 +1531,7 @@ else{
     new TeslaMotors();
 }
 
-function Sleep(milliseconds) {
+function Sleep(milliseconds){
     return new Promise(resolve => setTimeout(resolve, milliseconds));
 }
 
