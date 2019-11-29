@@ -443,7 +443,7 @@ class TeslaMotors extends utils.Adapter {
         Expires.setDate(Expires.getDate() - 10); // Refresh 10 days before expire
         if(Adapter.config.authToken.length > 0 && Expires < new Date()){
             tjs.refreshToken(Adapter.config.refreshToken, async (err, result) => {
-                if(result.response.statusCode !== 200){
+                if(!result || !result.response || result.response.statusCode !== 200){
                     Adapter.log.warn('Could not refresh Token, trying to get a new Token');
                     await Adapter.setStateAsync('info.connection', false, true);
                     await Adapter.GetNewToken();
@@ -508,11 +508,15 @@ class TeslaMotors extends utils.Adapter {
                 authToken: Adapter.config.authToken,
                 carIndex: vehicleIndex
             };
+            let vehicle;
+            try{
+                vehicle = await tjs.vehicleAsync(options);
+            }
+            catch(err){
+                Adapter.log.warn('Invalid answer from Vehicle request. Error: ' + err);
+                return resolve();
+            }
 
-            let vehicle = await tjs.vehicleAsync(options).catch(err => {
-                Adapter.log.error('Invalid answer from Vehicle request. Error: ' + err);
-                resolve();
-            });
             Adapter.log.debug('vehicle Answer:' + JSON.stringify(vehicle));
 
             Adapter.setState('vehicle.id_s', vehicle.id_s, true);
@@ -551,7 +555,7 @@ class TeslaMotors extends utils.Adapter {
                 authToken: Adapter.config.authToken,
                 vehicleID: Adapter.config.vehicle_id_s
             };
-            tjs.wakeUp(options, async (err, data) => {
+            await tjs.wakeUp(options, async (err, data) => {
                 Adapter.WakeItUpRetryCount--;
                 Adapter.log.debug("Wake up Response:" + JSON.stringify(data) + JSON.stringify(err));
                 if(err || data.state !== "online"){
@@ -564,15 +568,14 @@ class TeslaMotors extends utils.Adapter {
                         Adapter.log.warn("Was not able to wake up the car within 50 Seconds. Car has maybe not internet connection");
                         Adapter.WakeItUpRetryCount = 30;
                     }
-                    resolve();
                 }
                 else{
                     Adapter.log.debug("Car is Awake");
                     Adapter.setState('command.standby', false, true);
                     Adapter.WakeItUpRetryCount = 30;
-                    resolve();
                 }
             });
+            resolve();
         });
     }
 
@@ -589,19 +592,24 @@ class TeslaMotors extends utils.Adapter {
             authToken: Adapter.config.authToken,
             vehicleID: Adapter.config.vehicle_id_s
         };
-        let vd = await new Promise(async (resolve, reject) => {
-            tjs.vehicleData(options, (err, data) => {
-                Adapter.log.debug("Answer from vehicleState:" + JSON.stringify(data) + JSON.stringify(err));
-                if(err){
-                    reject(err);
-                }
-                else{
-                    resolve(data);
-                }
+        let vd;
+        try{
+            vd = await new Promise(async (resolve, reject) => {
+                tjs.vehicleData(options, (err, data) => {
+                    Adapter.log.debug("Answer from vehicleState:" + JSON.stringify(data) + JSON.stringify(err));
+                    if(err){
+                        reject(err);
+                    }
+                    else{
+                        resolve(data);
+                    }
+                });
             });
-        }).catch(error => {
+        }
+        catch(error){
             Adapter.log.warn('Could not retrieve Data from the Car! Response: ' + error);
-        });
+            return;
+        }
 
         Adapter.log.debug("Vehicle Data: " + JSON.stringify(vd));
 
