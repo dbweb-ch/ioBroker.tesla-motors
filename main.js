@@ -1485,7 +1485,7 @@ class TeslaMotors extends utils.Adapter {
         await objects.forEach(async (object) => {
             let id = object.id;
             delete object.id;
-            this.setObjectNotExistsAsync(id, {
+            await this.setObjectNotExistsAsync(id, {
                 type: 'state',
                 common: object,
                 native: []
@@ -1497,7 +1497,7 @@ class TeslaMotors extends utils.Adapter {
         await objects.forEach(async (object) => {
             let id = object.id;
             delete object.id;
-            this.setObjectAsync(id, {
+            await this.setObjectAsync(id, {
                 type: 'state',
                 common: object,
                 native: []
