@@ -692,7 +692,7 @@ class TeslaMotors extends utils.Adapter {
         Adapter.setState('driveState.latitude', vd.drive_state.latitude, true);
         Adapter.setState('driveState.longitude', vd.drive_state.longitude, true);
         Adapter.setState('driveState.heading', vd.drive_state.heading, true);
-        Adapter.setState('driveState.gps_as_of', vd.drive_state.gps_as_of, true);
+        Adapter.setState('driveState.gps_as_of', vd.drive_state.gps_as_of * 1000, true);
 
 
         Adapter.setState('vehicle.is_user_present', vd.vehicle_state.is_user_present, true);

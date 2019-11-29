@@ -129,10 +129,18 @@
             "native": {}
         },
         {
+            "_id": "softwareUpdate",
+            "type": "channel",
+            "common": {
+                "name": "Info on outstanding Software Updates"
+            },
+            "native": {}
+        },
+        {
             "_id": "command.standby",
             "type": "state",
             "common": {
-                "name": "Wake up State",
+                "name": "Car in Standby?",
                 "type": "boolean",
                 "role": "info.standby",
                 "write": true
