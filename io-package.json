@@ -258,6 +258,7 @@
                 "desc": "Turn on climate to pre-set temperature",
                 "type": "boolean",
                 "role": "switch.power",
+                "read": true,
                 "write": true
             },
             "native": {}
@@ -270,6 +271,7 @@
                 "type": "number",
                 "role": "level",
                 "unit": "%",
+                "read": true,
                 "write": true,
                 "min": 50,
                 "max": 100
@@ -283,6 +285,7 @@
                 "name": "Open / Close charge Port",
                 "type": "boolean",
                 "role": "switch.lock",
+                "read": true,
                 "write": true
             },
             "native": {}
@@ -306,6 +309,7 @@
                 "name": "Charging state",
                 "type": "boolean",
                 "role": "switch.enable",
+                "read": true,
                 "write": true
             },
             "native": {}
@@ -317,6 +321,7 @@
                 "name": "Enable valet Mode",
                 "type": "boolean",
                 "role": "switch.enable",
+                "read": true,
                 "write": true
             },
             "native": {}
@@ -328,6 +333,7 @@
                 "name": "Pin for Valet Mode",
                 "type": "string",
                 "def": "????",
+                "read": true,
                 "write": true
             },
             "native": {}
@@ -340,6 +346,7 @@
                 "desc": "Set Limit with 'SpeedLimitValue'",
                 "type": "boolean",
                 "role": "switch.enable",
+                "read": true,
                 "write": true
             },
             "native": {}
@@ -351,6 +358,7 @@
                 "name": "Enable Sentry Mode",
                 "type": "boolean",
                 "role": "switch.enable",
+                "read": true,
                 "write": true
             },
             "native": {}
@@ -362,6 +370,7 @@
                 "name": "Enable Remote Start",
                 "type": "boolean",
                 "role": "switch.enable",
+                "read": true,
                 "write": true
             },
             "native": {}
@@ -374,6 +383,7 @@
                 "desc": "Software need to be available (Download 100%)",
                 "type": "boolean",
                 "role": "button.start",
+                "read": false,
                 "write": true
             },
             "native": {}
@@ -386,6 +396,8 @@
                 "desc": "Level of Seat heater (0 = off,3 = max)",
                 "type": "number",
                 "role": "level",
+                "states": {"0": "OFF", "1": "1", "2": "2", "3": "MAX"},
+                "read": true,
                 "write": true,
                 "min": 0,
                 "max": 3
@@ -400,6 +412,8 @@
                 "desc": "Level of Seat heater (0 = off,3 = max)",
                 "type": "number",
                 "role": "level",
+                "states": {"0": "OFF", "1": "1", "2": "2", "3": "MAX"},
+                "read": true,
                 "write": true,
                 "min": 0,
                 "max": 3
@@ -413,6 +427,7 @@
                 "name": "Steering wheel heater",
                 "type": "boolean",
                 "role": "switch.enable",
+                "read": true,
                 "write": true
             },
             "native": {}
@@ -425,6 +440,7 @@
                 "desc": "Hint: Can also be used to close all windows",
                 "type": "boolean",
                 "role": "switch.lock.window",
+                "read": true,
                 "write": true
             },
             "native": {}
@@ -436,6 +452,7 @@
                 "name": "Open trunk",
                 "type": "boolean",
                 "role": "button.open.door",
+                "read": false,
                 "write": true
             },
             "native": {}
@@ -447,6 +464,7 @@
                 "name": "Open frunk (front trunk)",
                 "type": "boolean",
                 "role": "button.open.door",
+                "read": false,
                 "write": true
             },
             "native": {}
@@ -459,6 +477,7 @@
                 "desc": "Sets temperature of driver and passenger",
                 "type": "number",
                 "role": "value.temperature",
+                "read": true,
                 "unit": "°C",
                 "write": true
             },
@@ -470,7 +489,9 @@
             "common": {
                 "name": "Charging State",
                 "type": "string",
-                "role": "state"
+                "role": "state",
+                "read": true,
+                "write": false
             },
             "native": {}
         },
@@ -482,6 +503,8 @@
                 "type": "number",
                 "role": "value.battery",
                 "unit": "%",
+                "read": true,
+                "write": false,
                 "min": 0,
                 "max": 100
             },
@@ -494,6 +517,8 @@
                 "name": "Scheduled charge start Time",
                 "desc": "Current Format: yyyy-MM-ddTHH:mm:ss (But can be changed by Tesla anytime)",
                 "type": "string",
+                "read": true,
+                "write": false,
                 "role": "date.start"
             },
             "native": {}
@@ -504,6 +529,8 @@
             "common": {
                 "name": "Battery heater State",
                 "type": "boolean",
+                "read": true,
+                "write": false,
                 "role": "indicator"
             },
             "native": {}
@@ -514,7 +541,9 @@
             "common": {
                 "name": "Minutes to fully Charge",
                 "type": "number",
-                "role": "value"
+                "role": "value",
+                "read": true,
+                "write": false
             },
             "native": {}
         },
@@ -524,7 +553,9 @@
             "common": {
                 "name": "Fast Charger connected",
                 "type": "boolean",
-                "role": "indicator"
+                "role": "indicator",
+                "read": true,
+                "write": false
             },
             "native": {}
         },
@@ -536,6 +567,8 @@
                 "type": "number",
                 "role": "value.battery",
                 "unit": "%",
+                "read": true,
+                "write": false,
                 "min": 0,
                 "max": 100
             },
@@ -548,7 +581,9 @@
                 "name": "Energy added with last Charge",
                 "type": "number",
                 "role": "value",
-                "unit": "kWh"
+                "unit": "kWh",
+                "read": true,
+                "write": false
             },
             "native": {}
         },
@@ -559,7 +594,9 @@
                 "name": "Charger Voltage",
                 "type": "number",
                 "role": "value.voltage",
-                "unit": "V"
+                "unit": "V",
+                "read": true,
+                "write": false
             },
             "native": {}
         },
@@ -570,7 +607,9 @@
                 "name": "Charger Power",
                 "type": "number",
                 "role": "value",
-                "unit": "W"
+                "unit": "W",
+                "read": true,
+                "write": false
             },
             "native": {}
         },
@@ -581,7 +620,9 @@
                 "name": "Charge current requested",
                 "type": "number",
                 "role": "value.current",
-                "unit": "A"
+                "unit": "A",
+                "read": true,
+                "write": false
             },
             "native": {}
         },
@@ -591,7 +632,9 @@
             "common": {
                 "name": "Charge port cold weather mode",
                 "type": "boolean",
-                "role": "indicator"
+                "role": "indicator",
+                "read": true,
+                "write": false
             },
             "native": {}
         },
@@ -601,7 +644,9 @@
             "common": {
                 "name": "Battery Range",
                 "type": "number",
-                "role": "state"
+                "role": "state",
+                "read": true,
+                "write": false
             },
             "native": {}
         },
@@ -611,7 +656,9 @@
             "common": {
                 "name": "Estimated Battery Range",
                 "type": "number",
-                "role": "state"
+                "role": "state",
+                "read": true,
+                "write": false
             },
             "native": {}
         },
@@ -621,7 +668,9 @@
             "common": {
                 "name": "Ideal Battery Range",
                 "type": "number",
-                "role": "state"
+                "role": "state",
+                "read": true,
+                "write": false
             },
             "native": {}
         },
@@ -631,7 +680,9 @@
             "common": {
                 "name": "Distance added with Charge",
                 "type": "number",
-                "role": "state"
+                "role": "state",
+                "read": true,
+                "write": false
             },
             "native": {}
         },
@@ -642,7 +693,9 @@
                 "name": "Inside Temperature",
                 "type": "number",
                 "role": "value.temperature",
-                "unit": "°C"
+                "unit": "°C",
+                "read": true,
+                "write": false
             },
             "native": {}
         },
@@ -653,7 +706,9 @@
                 "name": "Outside Temperature",
                 "type": "number",
                 "role": "value.temperature",
-                "unit": "°C"
+                "unit": "°C",
+                "read": true,
+                "write": false
             },
             "native": {}
         },
@@ -664,7 +719,9 @@
                 "name": "Max. available inside Temperature",
                 "type": "number",
                 "role": "value.temperature",
-                "unit": "°C"
+                "unit": "°C",
+                "read": true,
+                "write": false
             },
             "native": {}
         },
@@ -675,7 +732,9 @@
                 "name": "Min. available inside Temperature",
                 "type": "number",
                 "role": "value.temperature",
-                "unit": "°C"
+                "unit": "°C",
+                "read": true,
+                "write": false
             },
             "native": {}
         },
@@ -685,7 +744,9 @@
             "common": {
                 "name": "Sun Roof Installed",
                 "type": "boolean",
-                "role": "indicator"
+                "role": "indicator",
+                "read": true,
+                "write": false
             },
             "native": {}
         },
@@ -695,7 +756,9 @@
             "common": {
                 "name": "Front driver window state",
                 "type": "boolean",
-                "role": "sensor.window"
+                "role": "sensor.window",
+                "read": true,
+                "write": false
             },
             "native": {}
         },
@@ -705,7 +768,9 @@
             "common": {
                 "name": "Front passenger window state",
                 "type": "boolean",
-                "role": "sensor.window"
+                "role": "sensor.window",
+                "read": true,
+                "write": false
             },
             "native": {}
         },
@@ -715,7 +780,9 @@
             "common": {
                 "name": "Rear driver window state",
                 "type": "boolean",
-                "role": "sensor.window"
+                "role": "sensor.window",
+                "read": true,
+                "write": false
             },
             "native": {}
         },
@@ -725,7 +792,9 @@
             "common": {
                 "name": "Front Passenger window state",
                 "type": "boolean",
-                "role": "sensor.window"
+                "role": "sensor.window",
+                "read": true,
+                "write": false
             },
             "native": {}
         },
@@ -735,7 +804,9 @@
             "common": {
                 "name": "Wiper blade heater",
                 "type": "boolean",
-                "role": "indicator"
+                "role": "indicator",
+                "read": true,
+                "write": false
             },
             "native": {}
         },
@@ -745,7 +816,9 @@
             "common": {
                 "name": "Side mirrors heaters",
                 "type": "boolean",
-                "role": "indicator"
+                "role": "indicator",
+                "read": true,
+                "write": false
             },
             "native": {}
         },
@@ -755,7 +828,9 @@
             "common": {
                 "name": "Is preconditioning",
                 "type": "boolean",
-                "role": "indicator"
+                "role": "indicator",
+                "read": true,
+                "write": false
             },
             "native": {}
         },
@@ -765,7 +840,9 @@
             "common": {
                 "name": "Smart preconditioning",
                 "type": "boolean",
-                "role": "indicator"
+                "role": "indicator",
+                "read": true,
+                "write": false
             },
             "native": {}
         },
@@ -775,7 +852,9 @@
             "common": {
                 "name": "Auto conditioning",
                 "type": "boolean",
-                "role": "indicator"
+                "role": "indicator",
+                "read": true,
+                "write": false
             },
             "native": {}
         },
@@ -785,7 +864,9 @@
             "common": {
                 "name": "Battery heater",
                 "type": "boolean",
-                "role": "indicator"
+                "role": "indicator",
+                "read": true,
+                "write": false
             },
             "native": {}
         },
@@ -795,7 +876,9 @@
             "common": {
                 "name": "Shift State",
                 "type": "string",
-                "role": "indicator"
+                "role": "indicator",
+                "read": true,
+                "write": false
             },
             "native": {}
         },
@@ -806,7 +889,9 @@
                 "name": "Power",
                 "type": "number",
                 "role": "value.power.consumption",
-                "unit": "Wh"
+                "unit": "Wh",
+                "read": true,
+                "write": false
             },
             "native": {}
         },
@@ -816,7 +901,9 @@
             "common": {
                 "name": "Current position latitude",
                 "type": "number",
-                "role": "value.gps.latitude"
+                "role": "value.gps.latitude",
+                "read": true,
+                "write": false
             },
             "native": {}
         },
@@ -826,7 +913,9 @@
             "common": {
                 "name": "Current position longitude",
                 "type": "number",
-                "role": "value.gps.longitude"
+                "role": "value.gps.longitude",
+                "read": true,
+                "write": false
             },
             "native": {}
         },
@@ -838,6 +927,8 @@
                 "type": "number",
                 "role": "value.direction",
                 "unit": "°deg",
+                "read": true,
+                "write": false,
                 "min": 0,
                 "max": 360
             },
@@ -849,7 +940,9 @@
             "common": {
                 "name": "Timestamp of last gps position",
                 "type": "number",
-                "role": "value.time"
+                "role": "value.time",
+                "read": true,
+                "write": false
             },
             "native": {}
         },
@@ -859,7 +952,9 @@
             "common": {
                 "name": "Speed limit Max settable",
                 "type": "number",
-                "role": "state"
+                "role": "state",
+                "read": true,
+                "write": false
             },
             "native": {}
         },
@@ -869,7 +964,9 @@
             "common": {
                 "name": "Speed limit Min settable",
                 "type": "number",
-                "role": "state"
+                "role": "state",
+                "read": true,
+                "write": false
             },
             "native": {}
         },
@@ -879,7 +976,9 @@
             "common": {
                 "name": "Current speed",
                 "type": "number",
-                "role": "state"
+                "role": "value",
+                "read": true,
+                "write": false
             },
             "native": {}
         },
@@ -889,7 +988,9 @@
             "common": {
                 "name": "Is user present",
                 "type": "boolean",
-                "role": "indicator"
+                "role": "indicator",
+                "read": true,
+                "write": false
             },
             "native": {}
         },
@@ -899,7 +1000,9 @@
             "common": {
                 "name": "Car Type",
                 "type": "string",
-                "role": "text"
+                "role": "text",
+                "read": true,
+                "write": false
             },
             "native": {}
         },
@@ -911,6 +1014,8 @@
                 "type": "number",
                 "role": "level",
                 "unit": "%",
+                "read": true,
+                "write": false,
                 "min": 0,
                 "max": 100
             },
@@ -923,6 +1028,8 @@
                 "name": "Update expected duration",
                 "type": "number",
                 "role": "value",
+                "read": true,
+                "write": false,
                 "unit": "sec"
             },
             "native": {}
@@ -935,6 +1042,8 @@
                 "type": "number",
                 "role": "level",
                 "unit": "%",
+                "read": true,
+                "write": false,
                 "min": 0,
                 "max": 100
             },
@@ -946,6 +1055,8 @@
             "common": {
                 "name": "Update Status",
                 "type": "string",
+                "read": true,
+                "write": false,
                 "role": "state"
             },
             "native": {}
@@ -956,7 +1067,9 @@
             "common": {
                 "name": "Update Version",
                 "type": "string",
-                "role": "text"
+                "role": "text",
+                "read": true,
+                "write": false
             },
             "native": {}
         }
