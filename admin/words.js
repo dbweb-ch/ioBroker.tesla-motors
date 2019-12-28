@@ -4,8 +4,8 @@
 systemDictionary = {
     "Tesla Account User (Usually your Mailaddress)": {
         "en": "Tesla Account User (Usually your Mailaddress)",
-        "de": "Tesla Benutzername (normalerweise Ihre Mailadresse)",
-        "ru": "Пользователь учетной записи Tesla (обычно ваш почтовый адрес)",
+        "de": "Tesla Benutzername (normalerweise Ihre E-Mail)",
+        "ru": "Пользователь учетной записи Tesla (обычно ваш email)",
         "pt": "Usuário da conta Tesla (geralmente o seu endereço de email)",
         "nl": "Tesla-accountgebruiker (meestal uw e-mailadres)",
         "fr": "Compte utilisateur Tesla (généralement votre adresse mail)",
@@ -28,8 +28,8 @@ systemDictionary = {
     },
     "Smart": {
         "en": "Smart",
-        "de": "Clever",
-        "ru": "Умная",
+        "de": "Smart",
+        "ru": "Smart",
         "pt": "Inteligente",
         "nl": "Slim",
         "fr": "Intelligent",
@@ -41,7 +41,7 @@ systemDictionary = {
     "Aggressive": {
         "en": "Aggressive",
         "de": "Aggressiv",
-        "ru": "агрессивный",
+        "ru": "Агрессивный",
         "pt": "Agressivo",
         "nl": "Agressief",
         "fr": "Agressif",
@@ -53,7 +53,7 @@ systemDictionary = {
     "Temperate": {
         "en": "Temperate",
         "de": "Zurückhaltend",
-        "ru": "умеренный",
+        "ru": "Умеренный",
         "pt": "Temperado",
         "nl": "Gematigd",
         "fr": "Tempéré",
@@ -64,8 +64,8 @@ systemDictionary = {
     },
     "Off": {
         "en": "Off",
-        "de": "aus",
-        "ru": "от",
+        "de": "Aus",
+        "ru": "Выкл",
         "pt": "Fora",
         "nl": "Uit",
         "fr": "De",
@@ -113,7 +113,7 @@ systemDictionary = {
     "Token": {
         "en": "Token",
         "de": "Token",
-        "ru": "знак",
+        "ru": "Токен",
         "pt": "Símbolo",
         "nl": "blijk",
         "fr": "Jeton",
@@ -124,8 +124,8 @@ systemDictionary = {
     },
     "Refresh Token": {
         "en": "Refresh Token",
-        "de": "Aktualisierungs Token",
-        "ru": "Обновить токен",
+        "de": "Aktualisierungs-Token",
+        "ru": "Refresh Token",
         "pt": "Atualizar token",
         "nl": "Token vernieuwen",
         "fr": "Refresh Token",
@@ -161,7 +161,7 @@ systemDictionary = {
     "You have to get a Token before storing!": {
         "en": "You have to get a Token before storing!",
         "de": "Sie müssen ein Token holen, bevor sie speichern können!",
-        "ru": "Вы должны получить токен перед хранением!",
+        "ru": "Вы должны получить токен перед сохранением!",
         "pt": "Você precisa obter um token antes de armazenar!",
         "nl": "Je moet een teken krijgen voordat je het opbergt!",
         "fr": "Vous devez obtenir un jeton avant de le stocker!",
