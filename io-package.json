@@ -69,7 +69,7 @@
             "tesla-motors"
         ],
         "mode": "daemon",
-        "type": "general",
+        "type": "vehicle",
         "compact": true,
         "materialize": true,
         "materializeTab": false,
