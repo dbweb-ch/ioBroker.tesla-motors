@@ -114,6 +114,7 @@
                                         $('#vehicle_id_s').append(option);
                                     });
                                     $("#vehicle_id_s").val($("#vehicle_id_s option:first").val());
+                                    M.FormSelect.init(document.querySelectorAll('#vehicle_id_s'));
                                 }
                                 onChange();
                             }
