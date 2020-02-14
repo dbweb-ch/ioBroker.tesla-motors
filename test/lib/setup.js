@@ -36,11 +36,11 @@ function copyFileSync(source, target) {
         }
     }
 
-    try{
+    try {
         fs.writeFileSync(targetFile, fs.readFileSync(source));
     }
-    catch(err){
-        console.log("file copy error: " + source + " -> " + targetFile + " (error ignored)");
+    catch (err) {
+        console.log("file copy error: " +source +" -> " + targetFile + " (error ignored)");
     }
 }
 
@@ -98,11 +98,11 @@ function storeOriginalFiles() {
     }
 
     fs.writeFileSync(dataDir + 'objects.json.original', JSON.stringify(objects));
-    try{
+    try {
         f = fs.readFileSync(dataDir + 'states.json');
         fs.writeFileSync(dataDir + 'states.json.original', f);
     }
-    catch(err){
+    catch (err) {
         console.log('no states.json found - ignore');
     }
 }
@@ -113,17 +113,17 @@ function restoreOriginalFiles() {
 
     var f = fs.readFileSync(dataDir + 'objects.json.original');
     fs.writeFileSync(dataDir + 'objects.json', f);
-    try{
+    try {
         f = fs.readFileSync(dataDir + 'states.json.original');
         fs.writeFileSync(dataDir + 'states.json', f);
     }
-    catch(err){
+    catch (err) {
         console.log('no states.json.original found - ignore');
     }
 
 }
 
-function checkIsAdapterInstalled(cb, counter, customName){
+function checkIsAdapterInstalled(cb, counter, customName) {
     customName = customName || pkg.name.split('.').pop();
     counter = counter || 0;
     var dataDir = rootDir + 'tmp/' + appName + '-data/';
@@ -132,7 +132,7 @@ function checkIsAdapterInstalled(cb, counter, customName){
     try {
         var f = fs.readFileSync(dataDir + 'objects.json');
         var objects = JSON.parse(f.toString());
-        if(objects['system.adapter.' + customName + '.0']){
+        if (objects['system.adapter.' + customName + '.0']) {
             console.log('checkIsAdapterInstalled: ready!');
             setTimeout(function () {
                 if (cb) cb();
@@ -164,7 +164,7 @@ function checkIsControllerInstalled(cb, counter) {
     try {
         var f = fs.readFileSync(dataDir + 'objects.json');
         var objects = JSON.parse(f.toString());
-        if(objects['system.certificates']){
+        if (objects['system.certificates']) {
             console.log('checkIsControllerInstalled: installed!');
             setTimeout(function () {
                 if (cb) cb();
@@ -186,8 +186,8 @@ function checkIsControllerInstalled(cb, counter) {
     }
 }
 
-function installAdapter(customName, cb){
-    if(typeof customName === 'function'){
+function installAdapter(customName, cb) {
+    if (typeof customName === 'function') {
         cb = customName;
         customName = null;
     }
@@ -311,8 +311,7 @@ function installJsController(cb) {
         } else {
             // check if port 9000 is free, else admin adapter will be added to running instance
             var client = new require('net').Socket();
-            client.on('error', () => {
-            });
+            client.on('error', () => {});
             client.connect(9000, '127.0.0.1', function() {
                 console.error('Cannot initiate fisrt run of test, because one instance of application is running on this PC. Stop it and repeat.');
                 process.exit(0);
@@ -458,26 +457,26 @@ function setupController(cb) {
         var dataDir = rootDir + 'tmp/' + appName + '-data/';
 
         var objs;
-        try{
+        try {
             objs = fs.readFileSync(dataDir + 'objects.json');
             objs = JSON.parse(objs);
         }
-        catch(e){
+        catch (e) {
             console.log('ERROR reading/parsing system configuration. Ignore');
             objs = {'system.config': {}};
         }
-        if(!objs || !objs['system.config']){
+        if (!objs || !objs['system.config']) {
             objs = {'system.config': {}};
         }
 
-        if(cb) cb(objs['system.config']);
+        if (cb) cb(objs['system.config']);
     });
 }
 
 function startAdapter(objects, states, callback) {
-    if(adapterStarted){
+    if (adapterStarted) {
         console.log('Adapter already started ...');
-        if(callback) callback(objects, states);
+        if (callback) callback(objects, states);
         return;
     }
     adapterStarted = true;
@@ -539,7 +538,7 @@ function startController(isStartAdapter, onObjectChange, onStateChange, callback
                 "connectTimeout": 2000
             },
             logger: {
-                silly: function(msg){
+                silly: function (msg) {
                     console.log(msg);
                 },
                 debug: function (msg) {
@@ -562,7 +561,7 @@ function startController(isStartAdapter, onObjectChange, onStateChange, callback
                     if (isStartAdapter) {
                         startAdapter(objects, states, callback);
                     } else {
-                        if(callback){
+                        if (callback) {
                             callback(objects, states);
                             callback = null;
                         }
@@ -585,7 +584,7 @@ function startController(isStartAdapter, onObjectChange, onStateChange, callback
                 }
             },
             logger: {
-                silly: function(msg){
+                silly: function (msg) {
                     console.log(msg);
                 },
                 debug: function (msg) {
@@ -605,11 +604,10 @@ function startController(isStartAdapter, onObjectChange, onStateChange, callback
                 isStatesConnected = true;
                 if (isObjectConnected) {
                     console.log('startController: started!!');
-                    if(isStartAdapter){
+                    if (isStartAdapter) {
                         startAdapter(objects, states, callback);
-                    }
-                    else{
-                        if(callback){
+                    } else {
+                        if (callback) {
                             callback(objects, states);
                             callback = null;
                         }
@@ -724,8 +722,8 @@ if (typeof module !== undefined && module.parent) {
     module.exports.setupController  = setupController;
     module.exports.stopAdapter      = stopAdapter;
     module.exports.startAdapter     = startAdapter;
-    module.exports.installAdapter = installAdapter;
+    module.exports.installAdapter   = installAdapter;
     module.exports.appName          = appName;
     module.exports.adapterName      = adapterName;
-    module.exports.adapterStarted = adapterStarted;
+    module.exports.adapterStarted   = adapterStarted;
 }
