@@ -379,6 +379,11 @@ class TeslaMotors extends utils.Adapter {
             // Get a Token
             let username = msg.message.teslaUsername;
             let password = tools.decrypt('rEYbFGzsXW8QBx5', msg.message.teslaPassword);
+            if(Adapter.config.teslaUsername.length == 0 || Adapter.config.teslaPassword.length == 0){
+                Adapter.log.error("Your authentification token is not valid or expired. Can't get a new token because you did not store username / password. Please request a new token in Adapter Configuration");
+                Adapter.sendTo(msg.from, msg.command, {success: false}, msg.callback);
+                return;
+            }
             Adapter.log.info('Try to get a token');
 
             let Response = await new Promise(async resolve => {
@@ -427,16 +432,20 @@ class TeslaMotors extends utils.Adapter {
                     });
                 });
             }
-            Adapter.sendTo(msg.from, msg.command, {login: Response, vehicles: Vehicles}, msg.callback);
+            Adapter.sendTo(msg.from, msg.command, {success: true, login: Response, vehicles: Vehicles}, msg.callback);
         }
     }
 
     async GetNewToken(){
         const Adapter = this;
         // No token, we try to get a token
+        if(Adapter.config.teslaUsername.length == 0 || Adapter.config.teslaPassword.length == 0){
+            Adapter.log.error("Your authentification token is not valid or expired. Can't get a new token because you did not store username / password. Please request a new token in Adapter Configuration");
+            return;
+        }
         Adapter.log.info('Try to get a new token');
         await tjs.login(Adapter.config.teslaUsername, tools.decrypt('rEYbFGzsXW8QBx5', Adapter.config.teslaPassword), async (err, result) => {
-            if(result.error || !result.authToken){
+            if(!result || !result.response || result.response.statusCode !== 200 || !result.authToken || !result.refreshToken){
                 Adapter.log.warn('Could not get token, Adapter cant read anything.');
             }
             else{
@@ -475,11 +484,9 @@ class TeslaMotors extends utils.Adapter {
         Adapter.log.info('Setting a new Token, Adapter will reboot after this automatically');
 
         let ExpireDate = new Date();
-        ExpireDate.setSeconds(ExpireDate.getSeconds() + tokenExpire);
-
+        ExpireDate.setSeconds(ExpireDate.getSeconds() + Number(tokenExpire));
         // Set new token to the settings, Adapter will reboot afterwards...
         let obj = await Adapter.getForeignObjectAsync(`system.adapter.${Adapter.namespace}`);
-
         if(!obj){
             Adapter.log.error('Could not get Adapter-Config');
             return;
@@ -487,9 +494,7 @@ class TeslaMotors extends utils.Adapter {
         obj.native.authToken = Adapter.config.authToken = authToken;
         obj.native.refreshToken = Adapter.config.refreshToken = refreshToken;
         obj.native.tokenExpire = Adapter.config.tokenExpire = ExpireDate.getTime();
-
         await Adapter.setForeignObjectAsync('system.adapter.tesla-motors.0', obj);
-
         await Adapter.setStateAsync('info.connection', true, true);
     }
 

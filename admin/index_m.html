@@ -98,6 +98,9 @@
                             if(response.login.error){
                                 showError(response.login.msg);
                             }
+                            else if(!response.success){
+                                showError("Please enter Username & Password");
+                            }
                             else{
                                 $('#authToken').val(response.login.authToken).trigger('click');
                                 $('#refreshToken').val(response.login.refreshToken).trigger('click');
