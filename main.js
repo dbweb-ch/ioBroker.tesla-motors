@@ -379,7 +379,7 @@ class TeslaMotors extends utils.Adapter {
             // Get a Token
             let username = msg.message.teslaUsername;
             let password = tools.decrypt('rEYbFGzsXW8QBx5', msg.message.teslaPassword);
-            if(Adapter.config.teslaUsername.length == 0 || Adapter.config.teslaPassword.length == 0){
+            if(username.length == 0 || password.length == 0){
                 Adapter.log.error("Your authentification token is not valid or expired. Can't get a new token because you did not store username / password. Please request a new token in Adapter Configuration");
                 Adapter.sendTo(msg.from, msg.command, {success: false}, msg.callback);
                 return;
@@ -461,7 +461,7 @@ class TeslaMotors extends utils.Adapter {
         Expires.setDate(Expires.getDate() - 10); // Refresh 10 days before expire
         if(Adapter.config.authToken.length > 0 && Expires < new Date()){
             tjs.refreshToken(Adapter.config.refreshToken, async (err, result) => {
-                if(!result || !result.response || result.response.statusCode !== 200){
+                if(!result || !result.response || result.response.statusCode !== 200 || !result.authToken || !result.refreshToken){
                     Adapter.log.warn('Could not refresh Token, trying to get a new Token');
                     await Adapter.setStateAsync('info.connection', false, true);
                     await Adapter.GetNewToken();
@@ -481,7 +481,7 @@ class TeslaMotors extends utils.Adapter {
 
     async SetNewToken(authToken, refreshToken, tokenExpire){
         const Adapter = this;
-        Adapter.log.info('Setting a new Token, Adapter will reboot after this automatically');
+        Adapter.log.info('Setting a new Token');
 
         let ExpireDate = new Date();
         ExpireDate.setSeconds(ExpireDate.getSeconds() + Number(tokenExpire));
