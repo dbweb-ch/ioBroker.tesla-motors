@@ -4,3 +4,7 @@ node_modules
 Thumbs.db
 package-lock.json
 .test
+test
+appveyor.yml
+.travis.yml
+tsconfig.json
