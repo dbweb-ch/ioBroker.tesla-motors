@@ -1,8 +1,12 @@
 {
     "common": {
         "name": "tesla-motors",
-        "version": "0.2.2",
+        "version": "0.2.3",
         "news": {
+            "0.2.3": {
+                "en": "Refresh info every 5 seconds when car is moving",
+                "de": "Aktualisierungsrate von 5 Sekunden wenn sich das Auto bewegt"
+            },
             "0.2.2": {
                 "en": "Use decrypt from ioBrokerTools, fix issue with selecting car",
                 "de": "Decrypt von ioBrokerTools, Fehler mit Wagenauswahl korrigiert"
