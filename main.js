@@ -122,8 +122,8 @@ class TeslaMotors extends utils.Adapter {
                  * If not went to sleep, request data and wait again 15 minutes.
                  * But: If last wake up is more than 12 hours ago, request state!
                  *
-                 * The whole thing is 1-minute-timer-based, so we do this stuff every minute
                  */
+                let NextRefresh = 60;
                 let Minutes = Math.floor((new Date().getTime() - this.lastTimeWokeUp.getTime()) / 60000);
                 // if car is in use, set lastTimeWokeUp to 0
                 let shift_state = await Adapter.getStateAsync('driveState.shift_state');
@@ -136,6 +136,10 @@ class TeslaMotors extends utils.Adapter {
                     (climate && climate.val) ||
                     (chargeState && chargeState.val !== 'Disconnected' && chargeState.val !== 'Complete')){
                     this.lastTimeWokeUp = new Date();
+                }
+                if((shift_state && shift_state.val !== null && shift_state.val !== "P") ||
+                    (speed && speed.val > 0)){
+                    NextRefresh = 5;
                 }
                 if(Minutes <= 10){
                     Adapter.log.debug("Get all info because last Wakeup time is only " + Minutes + "ago.");
@@ -163,7 +167,7 @@ class TeslaMotors extends utils.Adapter {
                     await Adapter.GetAllInfo();
                 }
 
-                Adapter.RefreshAllInfoTimeout = setTimeout(() => Adapter.RefreshAllInfoTask(), 60 * 1000); // check every minute
+                Adapter.RefreshAllInfoTimeout = setTimeout(() => Adapter.RefreshAllInfoTask(), NextRefresh * 1000); // check every Second
                 break;
         }
     }
