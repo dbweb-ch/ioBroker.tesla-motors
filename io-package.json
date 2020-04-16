@@ -897,7 +897,7 @@
                 "name": "Power",
                 "type": "number",
                 "role": "value.power.consumption",
-                "unit": "Wh",
+                "unit": "kWh",
                 "read": true,
                 "write": false
             },
