@@ -615,7 +615,7 @@
                 "name": "Charger Power",
                 "type": "number",
                 "role": "value",
-                "unit": "W",
+                "unit": "kW",
                 "read": true,
                 "write": false
             },
@@ -897,7 +897,7 @@
                 "name": "Power",
                 "type": "number",
                 "role": "value.power.consumption",
-                "unit": "Wh",
+                "unit": "kW",
                 "read": true,
                 "write": false
             },
