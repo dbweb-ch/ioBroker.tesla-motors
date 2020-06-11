@@ -471,7 +471,7 @@ class TeslaMotors extends utils.Adapter {
                     await Adapter.GetNewToken();
                 }
                 else{
-                    await Adapter.SetNewToken(result.authToken, result.refreshToken, result.body.expires_in);
+                    await Adapter.SetNewToken(result.authToken, result.refreshToken, result.response.body.expires_in);
                 }
             })
         }
