@@ -217,6 +217,13 @@ class TeslaMotors extends utils.Adapter {
                         requestDataChange = false;
                     }
                     break;
+                case 'command.flashLight':
+                    if(state.val){
+                        await tjs.flashLightsAsync(options);
+                        Adapter.setState('command.flashLight', false, true);
+                        requestDataChange = false;
+                    }
+                    break;
                 case 'command.Climate':
                     if(state.val){
                         await tjs.climateStartAsync(options);
@@ -586,7 +593,7 @@ class TeslaMotors extends utils.Adapter {
                         await Adapter.WakeItUp();
                     }
                     else{
-                        Adapter.log.warn("Was not able to wake up the car within 50 Seconds. Car has maybe not internet connection");
+                        Adapter.log.warn("Was not able to wake up the car within 50 Seconds. Car has maybe no internet connection");
                         Adapter.WakeItUpRetryCount = 30;
                     }
                 }
@@ -598,6 +605,7 @@ class TeslaMotors extends utils.Adapter {
             });
             resolve();
         });
+        Adapter.log.debug("Wake it Up Successful");
     }
 
     async GetAllInfo(){
