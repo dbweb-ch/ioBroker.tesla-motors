@@ -1,8 +1,12 @@
 {
     "common": {
         "name": "tesla-motors",
-        "version": "0.2.3",
+        "version": "0.3.0",
         "news": {
+            "0.3.0": {
+                "en": "Removed tests for node 8; updated dependencies",
+                "de": "Unterstützung Tests auf node 8 entfernt; Abhängigkeiten aktualisiert"
+            },
             "0.2.3": {
                 "en": "Refresh info every 5 seconds when car is moving",
                 "de": "Aktualisierungsrate von 5 Sekunden wenn sich das Auto bewegt"
@@ -120,7 +124,7 @@
             "_id": "chargeState",
             "type": "channel",
             "common": {
-                "name": "Information about car charge States"
+                "name": "Information about car charge states"
             },
             "native": {}
         },
@@ -144,7 +148,7 @@
             "_id": "softwareUpdate",
             "type": "channel",
             "common": {
-                "name": "Info on outstanding Software Updates"
+                "name": "Info on pending software updates"
             },
             "native": {}
         },
@@ -586,7 +590,7 @@
             "_id": "chargeState.charge_energy_added",
             "type": "state",
             "common": {
-                "name": "Energy added with last Charge",
+                "name": "Energy added with last charge",
                 "type": "number",
                 "role": "value",
                 "unit": "kWh",
@@ -599,7 +603,7 @@
             "_id": "chargeState.charger_voltage",
             "type": "state",
             "common": {
-                "name": "Charger Voltage",
+                "name": "Charger voltage",
                 "type": "number",
                 "role": "value.voltage",
                 "unit": "V",
@@ -612,7 +616,7 @@
             "_id": "chargeState.charger_power",
             "type": "state",
             "common": {
-                "name": "Charger Power",
+                "name": "Charger power",
                 "type": "number",
                 "role": "value",
                 "unit": "kW",
@@ -686,7 +690,7 @@
             "_id": "chargeState.charge_distance_added_rated",
             "type": "state",
             "common": {
-                "name": "Distance added with Charge",
+                "name": "Distance added with charge",
                 "type": "number",
                 "role": "state",
                 "read": true,
@@ -798,7 +802,7 @@
             "_id": "climateState.rear_passenger_window",
             "type": "state",
             "common": {
-                "name": "Front Passenger window state",
+                "name": "Front passenger window state",
                 "type": "boolean",
                 "role": "sensor.window",
                 "read": true,
@@ -958,7 +962,7 @@
             "_id": "driveState.SpeedLimitMax",
             "type": "state",
             "common": {
-                "name": "Speed limit Max settable",
+                "name": "Speed limit max. settable",
                 "type": "number",
                 "role": "state",
                 "read": true,
@@ -970,7 +974,7 @@
             "_id": "driveState.SpeedLimitMin",
             "type": "state",
             "common": {
-                "name": "Speed limit Min settable",
+                "name": "Speed limit min. settable",
                 "type": "number",
                 "role": "state",
                 "read": true,
@@ -1018,7 +1022,7 @@
             "_id": "softwareUpdate.download_percentage",
             "type": "state",
             "common": {
-                "name": "Software download in %",
+                "name": "Software downloaded in %",
                 "type": "number",
                 "role": "level",
                 "unit": "%",
