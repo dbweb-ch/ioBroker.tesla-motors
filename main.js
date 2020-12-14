@@ -363,12 +363,12 @@ class TeslaMotors extends utils.Adapter {
                     await tjs.windowControlAsync(options, state.val ? 'vent' : 'close');
                     break;
                 case 'command.openTrunk':
-                    await tjs.openTrunkAsync(options, 'front');
+                    await tjs.openTrunkAsync(options, tjs.TRUNK);
                     Adapter.setState('command.openTrunk', false, true);
                     requestDataChange = false;
                     break;
                 case 'command.openFrunk':
-                    await tjs.openTrunkAsync(options, 'rear');
+                    await tjs.openTrunkAsync(options, tjs.FRUNK);
                     Adapter.setState('command.openFrunk', false, true);
                     requestDataChange = false;
                     break;
