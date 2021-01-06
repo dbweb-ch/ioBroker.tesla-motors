@@ -94,6 +94,8 @@ Keep your credentials save! <br />To reject all Tokens, change your Tesla accoun
 * Hombach
 
 ## Changelog
+### 0.3.1
+* (dbweb-ch) Check token refresh more often
 ### 0.3.0
 * (Hombach) Removed tests for node 8; updated dependencies
 ### 0.2.3
