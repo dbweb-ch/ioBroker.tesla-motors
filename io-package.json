@@ -3,6 +3,18 @@
         "name": "tesla-motors",
         "version": "0.3.1",
         "news": {
+            "0.3.1": {
+                "en": "Check token refresh more often",
+                "de": "Häufigere Überprüfung der Token-Aktualisierung",
+                "ru": "Чаще проверяйте обновление токена",
+                "pt": "Verifique a atualização do token com mais frequência",
+                "nl": "Controleer de tokenvernieuwing vaker",
+                "fr": "Vérifier l'actualisation du jeton plus souvent",
+                "it": "Controlla l'aggiornamento del token più spesso",
+                "es": "Verifique la actualización del token con más frecuencia",
+                "pl": "Sprawdzaj częściej odświeżanie tokena",
+                "zh-cn": "检查令牌刷新的频率更高"
+            },
             "0.3.0": {
                 "en": "Removed tests for node 8; updated dependencies",
                 "de": "Unterstützung Tests auf node 8 entfernt; Abhängigkeiten aktualisiert"
