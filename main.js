@@ -77,7 +77,7 @@ class TeslaMotors extends utils.Adapter {
         Adapter.log.debug('Checking if token is valid');
         await this.RefreshToken();
         // Check again in 1 Day.
-        this.RefreshTokenTimeout = setTimeout(() => Adapter.RefreshTokenTask(), 24 * 60 * 60 * 1000);
+        this.RefreshTokenTimeout = setTimeout(() => Adapter.RefreshTokenTask(), 60 * 60 * 1000);
     }
 
     async RefreshStandbyInfoTask(){
@@ -411,6 +411,7 @@ class TeslaMotors extends utils.Adapter {
                     Adapter.log.info('Received a new Token');
                     let ExpireDate = new Date();
                     ExpireDate.setSeconds(ExpireDate.getSeconds() + result.body.expires_in);
+                    await Adapter.SetNewToken(result.authToken, result.refreshToken, result.body.expires_in);
                     await Adapter.setStateAsync('info.connection', true, true);
                     resolve({
                         error: false,
@@ -469,7 +470,7 @@ class TeslaMotors extends utils.Adapter {
         const Adapter = this;
         Adapter.log.debug("Check for Tokens and Expires");
         let Expires = new Date(Adapter.config.tokenExpire);
-        Expires.setDate(Expires.getDate() - 10); // Refresh 10 days before expire
+        Expires.setDate(Expires.getDate() - 30); // Refresh 30 days before expire
         if(Adapter.config.authToken.length > 0 && Expires < new Date()){
             tjs.refreshToken(Adapter.config.refreshToken, async (err, result) => {
                 if(!result || !result.response || result.response.statusCode !== 200 || !result.authToken || !result.refreshToken){
@@ -622,11 +623,15 @@ class TeslaMotors extends utils.Adapter {
             vehicleID: Adapter.config.vehicle_id_s
         };
         let vd;
+        let id_s = await Adapter.getStateAsync('vehicle.id_s');
         try{
             vd = await new Promise(async (resolve, reject) => {
                 tjs.vehicleData(options, (err, data) => {
                     Adapter.log.debug("Answer from vehicleState:" + JSON.stringify(data) + JSON.stringify(err));
                     if(err){
+                        if(Adapter.config.vehicle_id_s != id_s.val){
+                            Adapter.config.vehicle_id_s = id_s.val;
+                        }
                         reject(err);
                     }
                     else{
