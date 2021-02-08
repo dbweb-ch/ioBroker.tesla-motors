@@ -1,8 +1,20 @@
 {
     "common": {
         "name": "tesla-motors",
-        "version": "0.3.1",
+        "version": "0.3.2",
         "news": {
+            "0.3.2": {
+                "en": "Bugfix logging leading to a crash in case of failed Authentication",
+                "de": "Bugfix Logging, das bei fehlgeschlagener Authentifizierung zu einem Absturz führte",
+                "ru": "Запись логов с ошибками, приводившая к краху в случае неудачной аутентификации",
+                "pt": "Registo de erros que leva a um acidente em caso de falha da Autenticação",
+                "nl": "Bugfix logging leidt tot een crash in geval van mislukte Authenticatie",
+                "fr": "Correction d'un bogue entraînant un plantage en cas d'échec de l'authentification",
+                "it": "Bugfix logging che porta ad un crash in caso di autenticazione fallita",
+                "es": "Se ha corregido un error en el registro que provocaba un bloqueo en caso de que fallara la autenticación",
+                "pl": "Usunięcie błędu powodującego awarię logowania w przypadku nieudanego uwierzytelnienia",
+                "zh-cn": "修正在验证失败时导致崩溃的日志记录。"
+            },
             "0.3.1": {
                 "en": "Check token refresh more often",
                 "de": "Häufigere Überprüfung der Token-Aktualisierung",
