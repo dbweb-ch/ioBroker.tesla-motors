@@ -400,11 +400,15 @@ class TeslaMotors extends utils.Adapter {
             let Response = await new Promise(async resolve => {
                 tjs.login(username, password, async (err, result) => {
                     if(result.error || !result.authToken){
-                        Adapter.log.info('Username or Password invalid' + result.body.response);
+                        let errMsg = 'No response';
+                        if(result.body != undefined && result.body.response != undefined){
+                            errMsg = result.body.response;
+                        }
+                        Adapter.log.info('Username or Password invalid. ' + errMsg);
                         await Adapter.setStateAsync('info.connection', false, true);
                         resolve({
                             error: true,
-                            msg: 'Could not retrieve token, Error from Tesla: ' + result.body.response
+                            msg: 'Could not retrieve token, Error from Tesla: ' + errMsg
                         });
                         return;
                     }
