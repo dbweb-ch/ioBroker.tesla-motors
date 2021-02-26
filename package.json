@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@iobroker/adapter-core": "^2.4.0",
-    "teslajs": "^4.9.4"
+    "teslajs": "^4.9.7"
   },
   "devDependencies": {
     "gulp": "^4.0.0",
