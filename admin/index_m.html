@@ -127,7 +127,7 @@
                 })
             });
             $('#useMfa').change(() => {
-                $('input#saveCredentials, label[for="saveCredentials"]').toggle($(this).is(":checked"));
+                $('input#teslaMfaPassCode, label[for="teslaMfaPassCode"]').toggle($('#useMfa').is(":checked"));
             });
             // reinitialize all the Materialize labels on the page if you are dynamically adding inputs:
             if(M) M.updateTextFields();
