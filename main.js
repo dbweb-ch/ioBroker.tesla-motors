@@ -465,10 +465,17 @@ class TeslaMotors extends utils.Adapter {
         const Adapter = this;
         // No token, we try to get a token
         if(Adapter.config.teslaUsername.length == 0 || Adapter.config.teslaPassword.length == 0){
-            Adapter.log.error("Your authentification token is not valid or expired. Can't get a new token because you did not store username / password. Please request a new token in Adapter Configuration");
+            Adapter.log.warn("Your authentification token is not valid or expired. Can't get a new token because you did not store username / password. Please request a new token in Adapter Configuration");
             return;
         }
-        Adapter.log.info('New Token cant be retrieved, please use configuration page to do so.');
+        await tjs.login(Adapter.config.teslaUsername, tools.decrypt('rEYbFGzsXW8QBx5', Adapter.config.teslaPassword), async (err, result) => {
+            if(!result || !result.response || result.response.statusCode !== 200 || !result.authToken || !result.refreshToken){
+                Adapter.log.warn('Could not get token, Adapter cant read anything.');
+            }
+            else{
+                await Adapter.SetNewToken(result.authToken, result.refreshToken, result.body.expires_in);
+            }
+        });
     }
 
     async RefreshToken(){

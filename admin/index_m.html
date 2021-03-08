@@ -126,6 +126,9 @@
                     }
                 })
             });
+            $('#useMfa').change(() => {
+                $('input#saveCredentials, label[for="saveCredentials"]').toggle($(this).is(":checked"));
+            });
             // reinitialize all the Materialize labels on the page if you are dynamically adding inputs:
             if(M) M.updateTextFields();
         }
@@ -180,7 +183,7 @@
         </div>
     </div>
     <div class="row">
-        <div class="input-field col s12 m4">
+        <div class="input-field col s10 m4">
             <select id="wakeupPlan" class="value">
                 <option value="smart" class="translate">Smart</option>
                 <option value="aggressive" class="translate">Aggressive</option>
@@ -188,6 +191,10 @@
                 <option value="off" class="translate">Off</option>
             </select>
             <label class="translate" for="wakeupPlan">Refresh Rate</label>
+        </div>
+        <div class="col s2 input-field">
+            <input id="useMfa" type="checkbox" class="value"/>
+            <label class="translate" for="useMfa">Use Two-Factor Authentication</label>
         </div>
     </div>
     <div class="row">
