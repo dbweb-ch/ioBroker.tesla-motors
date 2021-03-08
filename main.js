@@ -134,7 +134,10 @@ class TeslaMotors extends utils.Adapter {
                 if((shift_state && shift_state.val !== null && shift_state.val !== "P") ||
                     (speed && speed.val > 0) ||
                     (climate && climate.val) ||
-                    (chargeState && chargeState.val !== 'Disconnected' && chargeState.val !== 'Complete')){
+                    (chargeState
+                        && chargeState.val !== 'Disconnected'
+                        && chargeState.val !== 'Complete'
+                        && chargeState.val !== 'NoPower')){
                     this.lastTimeWokeUp = new Date();
                 }
                 if((shift_state && shift_state.val !== null && shift_state.val !== "P") ||
