@@ -127,7 +127,8 @@
                 })
             });
             $('#useMfa').change(() => {
-                $('input#teslaMfaPassCode, label[for="teslaMfaPassCode"]').toggle($('#useMfa').is(":checked"));
+                $('#colTeslaMfaPassCode').toggle($('#useMfa').is(":checked"));
+                $('#colSaveCredentials').toggle(!$('#useMfa').is(":checked"));
             });
             // reinitialize all the Materialize labels on the page if you are dynamically adding inputs:
             if(M) M.updateTextFields();
@@ -206,11 +207,11 @@
             <input type="password" id="teslaPassword" class="value"/>
             <label for="teslaPassword" class="translate">Tesla Account Password</label>
         </div>
-        <div class="col s2 input-field">
+        <div class="col s2 input-field" id="colTeslaMfaPassCode">
             <input type="number" id="teslaMfaPassCode" class="value" placeholder="12345"/>
             <label for="teslaMfaPassCode" class="translate">Tesla 2FA PassCode</label>
         </div>
-        <div class="col s2 input-field">
+        <div class="col s2 input-field" id="colSaveCredentials">
             <input id="saveCredentials" type="checkbox" class="value"/>
             <label class="translate" for="saveCredentials">Save Credentials</label>
         </div>

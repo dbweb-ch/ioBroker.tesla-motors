@@ -9,6 +9,6 @@
     transform: translateY(-14px) scale(.8);
 }
 
-input#saveCredentials, label[for="saveCredentials"] {
+#colTeslaMfaPassCode {
     display:none;
 }
