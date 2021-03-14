@@ -134,7 +134,10 @@ class TeslaMotors extends utils.Adapter {
                 if((shift_state && shift_state.val !== null && shift_state.val !== "P") ||
                     (speed && speed.val > 0) ||
                     (climate && climate.val) ||
-                    (chargeState && chargeState.val !== 'Disconnected' && chargeState.val !== 'Complete')){
+                    (chargeState
+                        && chargeState.val !== 'Disconnected'
+                        && chargeState.val !== 'Complete'
+                        && chargeState.val !== 'NoPower')){
                     this.lastTimeWokeUp = new Date();
                 }
                 if((shift_state && shift_state.val !== null && shift_state.val !== "P") ||
@@ -390,6 +393,7 @@ class TeslaMotors extends utils.Adapter {
             // Get a Token
             let username = msg.message.teslaUsername;
             let password = tools.decrypt('rEYbFGzsXW8QBx5', msg.message.teslaPassword);
+            let mfaPassCode = msg.message.teslaMfaPassCode;
             if(username.length == 0 || password.length == 0){
                 Adapter.log.error("Your authentification token is not valid or expired. Can't get a new token because you did not store username / password. Please request a new token in Adapter Configuration");
                 Adapter.sendTo(msg.from, msg.command, {success: false}, msg.callback);
@@ -398,13 +402,22 @@ class TeslaMotors extends utils.Adapter {
             Adapter.log.info('Try to get a token');
 
             let Response = await new Promise(async resolve => {
-                tjs.login(username, password, async (err, result) => {
+                tjs.login({
+                        username: username,
+                        password: password,
+                        mfaPassCode: mfaPassCode
+                    }
+                    , async (err, result) => {
                     if(result.error || !result.authToken){
-                        Adapter.log.info('Username or Password invalid' + result.body.response);
+                        let errMsg = 'No response';
+                        if(result.body != undefined && result.body.response != undefined){
+                            errMsg = result.body.response;
+                        }
+                        Adapter.log.info('Username or Password invalid. ' + errMsg);
                         await Adapter.setStateAsync('info.connection', false, true);
                         resolve({
                             error: true,
-                            msg: 'Could not retrieve token, Error from Tesla: ' + result.body.response
+                            msg: 'Could not retrieve token, Error from Tesla: ' + errMsg
                         });
                         return;
                     }
@@ -452,10 +465,9 @@ class TeslaMotors extends utils.Adapter {
         const Adapter = this;
         // No token, we try to get a token
         if(Adapter.config.teslaUsername.length == 0 || Adapter.config.teslaPassword.length == 0){
-            Adapter.log.error("Your authentification token is not valid or expired. Can't get a new token because you did not store username / password. Please request a new token in Adapter Configuration");
+            Adapter.log.warn("Your authentification token is not valid or expired. Can't get a new token because you did not store username / password. Please request a new token in Adapter Configuration");
             return;
         }
-        Adapter.log.info('Try to get a new token');
         await tjs.login(Adapter.config.teslaUsername, tools.decrypt('rEYbFGzsXW8QBx5', Adapter.config.teslaPassword), async (err, result) => {
             if(!result || !result.response || result.response.statusCode !== 200 || !result.authToken || !result.refreshToken){
                 Adapter.log.warn('Could not get token, Adapter cant read anything.');
