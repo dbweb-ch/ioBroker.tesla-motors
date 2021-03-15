@@ -261,6 +261,28 @@
             "native": {}
         },
         {
+            "_id": "vehicle.homelink_device_count",
+            "type": "state",
+            "common": {
+                "name": "Homelink Device count",
+                "type": "number",
+                "role": "state"
+            },
+            "native": {}
+        },
+        {
+            "_id": "vehicle.homelink_nearby",
+            "type": "state",
+            "common": {
+                "name": "Homelink nearby",
+                "type": "boolean",
+                "role": "indicator",
+                "read": true,
+                "write": false
+            },
+            "native": {}
+        },
+        {
             "_id": "command.doorLock",
             "type": "state",
             "common": {
@@ -268,6 +290,20 @@
                 "desc": "true - open,false - close",
                 "type": "boolean",
                 "role": "switch.lock.door",
+                "write": true
+            },
+            "native": {}
+        },
+        {
+            "_id": "command.homelink",
+            "type": "state",
+            "common": {
+                "name": "Trigger home link",
+                "desc": "Can only be triggered when car is in region of device (check vehicle.homelink_nearby)",
+                "type": "boolean",
+                "role": "button",
+                "def": false,
+                "read": false,
                 "write": true
             },
             "native": {}

@@ -68,6 +68,7 @@ flashLights | Flash the lights | S
 honkHorn | Honk the horn | S
 openFrunk | Open Frunk (No recieve) | S
 openTrunk | Open Trunk (No recieve) | S
+homelink | Trigger homelink | S
 seat_heater_left | Seat Heater Left level (0-3) | SR
 seat_heater_rear_center | Rear center seat heater (0-3) | SR
 seat_heater_rear_left | Rear left seat heater (0-3) | SR
@@ -84,7 +85,7 @@ Your credentials do not have to be stored for the Adapter to work, but if you ar
 with refreshing the token this could make it more stable as the adapter can get a complete new token any time.<br />
 <aside class="warning">
 Warning:<br />
-With your Tesla credentials you can control the while car including open Windows and even driving around. 
+With your Tesla credentials you can control the whole car including open Windows and even driving around. 
 Keep your credentials save! <br />To reject all Tokens, change your Tesla account Password!
 </aside>
 
@@ -94,6 +95,9 @@ Keep your credentials save! <br />To reject all Tokens, change your Tesla accoun
 * Hombach
 
 ## Changelog
+### 0.4.1
+* (dbweb-ch) Refresh mode aggressive: change refresh rate to 1 second instead of 1 minute
+* (dbweb-ch) Add homelink support
 ### 0.4.0
 * (dbweb-ch) Implement 2FA Authentification, use new authentification flow
 ### 0.3.2
