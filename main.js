@@ -123,7 +123,7 @@ class TeslaMotors extends utils.Adapter {
                  * But: If last wake up is more than 12 hours ago, request state!
                  *
                  */
-                let NextRefresh = 60;
+                let NextRefresh = 5;
                 let Minutes = Math.floor((new Date().getTime() - this.lastTimeWokeUp.getTime()) / 60000);
                 // if car is in use, set lastTimeWokeUp to 0
                 let shift_state = await Adapter.getStateAsync('driveState.shift_state');
@@ -142,7 +142,7 @@ class TeslaMotors extends utils.Adapter {
                 }
                 if((shift_state && shift_state.val !== null && shift_state.val !== "P") ||
                     (speed && speed.val > 0)){
-                    NextRefresh = 5;
+                    NextRefresh = 1;
                 }
                 if(Minutes <= 10){
                     Adapter.log.debug("Get all info because last Wakeup time is only " + Minutes + "ago.");
