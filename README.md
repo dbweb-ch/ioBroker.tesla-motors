@@ -93,9 +93,11 @@ Keep your credentials save! <br />To reject all Tokens, change your Tesla accoun
 * dbweb-ch
 * Apollon77
 * Hombach
-* klein0r
 
 ## Changelog
+### 0.5.1
+* (dbweb-ch) Refresh mode aggressive: change refresh rate to 1 second instead of 1 minute
+* (dbweb-ch) Add homelink support
 ### 0.5.0
 * (klein0r) Store passwords and other sensitive information encrypted (BREAKING CHANGE)
 ### 0.4.2
