@@ -1,8 +1,20 @@
 {
     "common": {
         "name": "tesla-motors",
-        "version": "0.3.2",
+        "version": "0.4.0",
         "news": {
+            "0.4.0": {
+                "en": "Implement 2FA Authentification, use new authentification flow",
+                "de": "Implementiere 2FA Authentifizierung, nutze neue Authentifizierungsart",
+                "ru": "Внедрить аутентификацию 2FA, использовать новый поток аутентификации",
+                "pt": "Implementar autenticação 2FA, usar novo fluxo de autenticação",
+                "nl": "Implementeer 2FA-authenticatie, gebruik nieuwe authenticatiestroom",
+                "fr": "Mettre en œuvre l'authentification 2FA, utiliser un nouveau flux d'authentification",
+                "it": "Implementare l'autenticazione 2FA, utilizzare il nuovo flusso di autenticazione",
+                "es": "Implementar la autenticación 2FA, usar un nuevo flujo de autenticación",
+                "pl": "Zaimplementuj uwierzytelnianie 2FA, użyj nowego przepływu uwierzytelniania",
+                "zh-cn": "实施2FA身份验证，使用新的身份验证流程"
+            },
             "0.3.2": {
                 "en": "Bugfix logging leading to a crash in case of failed Authentication",
                 "de": "Bugfix Logging, das bei fehlgeschlagener Authentifizierung zu einem Absturz führte",
