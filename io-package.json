@@ -141,6 +141,19 @@
     "objects": [],
     "instanceObjects": [
         {
+            "_id": "info.connection",
+            "type": "state",
+            "common": {
+                "name": "Device or service connected",
+                "type": "boolean",
+                "read": true,
+                "write": false,
+                "role": "indicator.connected",
+                "def": false
+            },
+            "native": {}
+        },
+        {
             "_id": "command",
             "type": "channel",
             "common": {
