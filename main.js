@@ -131,15 +131,19 @@ class TeslaMotors extends utils.Adapter {
                 let climate = await Adapter.getStateAsync('command.Climate');
                 let chargeState = await Adapter.getStateAsync('chargeState.charging_state');
 
-                if((shift_state && shift_state.val !== null && shift_state.val !== "P") ||
-                    (speed && speed.val > 0) ||
-                    (climate && climate.val) ||
-                    (chargeState
-                        && chargeState.val !== 'Disconnected'
-                        && chargeState.val !== 'Complete'
-                        && chargeState.val !== 'NoPower'
-                        && chargeState.val !== 'Stopped')){
+                let inUse = '';
+                if(shift_state && shift_state.val !== null && shift_state.val !== "P") inUse = 'Shift State = ' + shift_state.val;
+                else if(speed && speed.val > 0) inUse = 'Speed ' + speed.val;
+                else if(climate && climate.val) inUse = 'Climate';
+                else if(chargeState
+                    && chargeState.val !== 'Disconnected'
+                    && chargeState.val !== 'Complete'
+                    && chargeState.val !== 'NoPower'
+                    && chargeState.val !== 'Stopped') inUse = 'Charging state = ' + chargeState.val;
+
+                if(inUse.length > 0){
                     this.lastTimeWokeUp = new Date();
+                    Adapter.log.debug("Reset last wake up time because car seems to be in use (Reason: " + inUse + ").");
                 }
                 if((shift_state && shift_state.val !== null && shift_state.val !== "P") ||
                     (speed && speed.val > 0)){
@@ -569,6 +573,7 @@ class TeslaMotors extends utils.Adapter {
                 // Car was sleeping before, but woke up now. So we trigger a refresh of data
                 this.refreshData = true;
                 this.lastTimeWokeUp = new Date();
+                Adapter.log.debug("Reset last wake up time because car was sleeping before, but woke up now.");
             }
             this.lastWakeState = vehicle.state === 'online';
             resolve();
