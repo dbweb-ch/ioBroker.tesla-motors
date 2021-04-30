@@ -1,8 +1,32 @@
 {
     "common": {
         "name": "tesla-motors",
-        "version": "0.4.0",
+        "version": "0.4.2",
         "news": {
+            "0.4.2": {
+                "en": "Define instanceObject \"info.connection\" to prevent warning with js-controller 3.2.",
+                "de": "instanceObject \"info.connection\" definiert, um eine Warnung mit js-controller 3.2 zu vermeiden.",
+                "ru": "Определите instanceObject \"info.connection\", чтобы предотвратить предупреждение с помощью js-controller 3.2.",
+                "pt": "Defina instanceObject \"info.connection\" para evitar avisos com js-controller 3.2.",
+                "nl": "Definieer instanceObject \"info.connection\" om waarschuwing met js-controller 3.2 te voorkomen.",
+                "fr": "Définissez instanceObject \"info.connection\" pour éviter les avertissements avec js-controller 3.2.",
+                "it": "Definire instanceObject \"info.connection\" per evitare avvisi con js-controller 3.2.",
+                "es": "Defina instanceObject \"info.connection\" para evitar advertencias con js-controller 3.2.",
+                "pl": "Zdefiniuj obiekt instanceObject „info.connection”, aby zapobiec ostrzeżeniu za pomocą kontrolera js 3.2.",
+                "zh-cn": "定义instanceObject“ info.connection”以防止使用js-controller 3.2发出警告。"
+            },
+            "0.4.1": {
+                "en": "Add \"Stopped\" as charge state where car can go asleep",
+                "de": "\"Gestoppt\" als Ladezustand hinzugefügt, in dem das Auto einschlafen kann",
+                "ru": "Добавьте \"Остановлен\" в качестве состояния зарядки, при котором автомобиль может заснуть.",
+                "pt": "Adicione 'Parado' como estado de carga onde o carro pode adormecer",
+                "nl": "Voeg 'Gestopt' toe als laadstatus waar de auto in slaap kan vallen",
+                "fr": "Ajouter `` Arrêté '' comme état de charge où la voiture peut s'endormir",
+                "it": "Aggiungi \"Fermata\" come stato di carica in cui l'auto può addormentarsi",
+                "es": "Agregue 'Detenido' como estado de carga donde el automóvil puede quedarse dormido",
+                "pl": "Dodaj „Zatrzymany” jako stan naładowania, w którym samochód może zasnąć",
+                "zh-cn": "添加“已停止”作为充电状态，汽车可以进入睡眠状态"
+            },
             "0.4.0": {
                 "en": "Implement 2FA Authentification, use new authentification flow",
                 "de": "Implementiere 2FA Authentifizierung, nutze neue Authentifizierungsart",
@@ -140,6 +164,19 @@
     },
     "objects": [],
     "instanceObjects": [
+        {
+            "_id": "info.connection",
+            "type": "state",
+            "common": {
+                "name": "Device or service connected",
+                "type": "boolean",
+                "read": true,
+                "write": false,
+                "role": "indicator.connected",
+                "def": false
+            },
+            "native": {}
+        },
         {
             "_id": "command",
             "type": "channel",
@@ -444,7 +481,12 @@
                 "desc": "Level of Seat heater (0 = off,3 = max)",
                 "type": "number",
                 "role": "level",
-                "states": {"0": "OFF", "1": "1", "2": "2", "3": "MAX"},
+                "states": {
+                    "0": "OFF",
+                    "1": "1",
+                    "2": "2",
+                    "3": "MAX"
+                },
                 "read": true,
                 "write": true,
                 "min": 0,
@@ -460,7 +502,12 @@
                 "desc": "Level of Seat heater (0 = off,3 = max)",
                 "type": "number",
                 "role": "level",
-                "states": {"0": "OFF", "1": "1", "2": "2", "3": "MAX"},
+                "states": {
+                    "0": "OFF",
+                    "1": "1",
+                    "2": "2",
+                    "3": "MAX"
+                },
                 "read": true,
                 "write": true,
                 "min": 0,
