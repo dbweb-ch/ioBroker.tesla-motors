@@ -2,6 +2,7 @@
 # ioBroker.tesla-motors
 [![NPM version](http://img.shields.io/npm/v/iobroker.tesla-motors.svg)](https://www.npmjs.com/package/iobroker.tesla-motors)
 [![Downloads](https://img.shields.io/npm/dm/iobroker.tesla-motors.svg)](https://www.npmjs.com/package/iobroker.tesla-motors)
+[![Stable](http://iobroker.live/badges/tesla-motors-stable.svg)](http://iobroker.live/badges/tesla-motors-stable.svg)
 [![installed](http://iobroker.live/badges/tesla-motors-installed.svg)](http://iobroker.live/badges/tesla-motors-installed.svg)
 [![Dependency Status](https://img.shields.io/david/dbweb-ch/iobroker.tesla-motors.svg)](https://david-dm.org/dbweb-ch/iobroker.tesla-motors)
 [![Known Vulnerabilities](https://snyk.io/test/github/dbweb-ch/ioBroker.tesla-motors/badge.svg)](https://snyk.io/test/github/dbweb-ch/ioBroker.tesla-motors)
