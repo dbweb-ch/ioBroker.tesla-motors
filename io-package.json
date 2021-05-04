@@ -1,8 +1,20 @@
 {
     "common": {
         "name": "tesla-motors",
-        "version": "0.4.2",
+        "version": "0.5.0",
         "news": {
+            "0.5.0": {
+                "en": "Store passwords and other sensitive information encrypted (breaking change - set your credentials again)",
+                "de": "Passwörter und andere vertrauliche Informationen werden verschlüsselt (breaking change - setzen Sie Ihre Anmeldeinformationen erneut)",
+                "ru": "Храните пароли и другую конфиденциальную информацию в зашифрованном виде (критическое изменение - снова установите учетные данные)",
+                "pt": "Armazene senhas e outras informações confidenciais criptografadas (alteração decisiva - defina suas credenciais novamente)",
+                "nl": "Bewaar wachtwoorden en andere gevoelige informatie versleuteld (wijziging verbreken - stel uw inloggegevens opnieuw in)",
+                "fr": "Stockez les mots de passe et autres informations sensibles chiffrés (changement de rupture - définissez à nouveau vos informations d'identification)",
+                "it": "Memorizza password e altre informazioni sensibili crittografate (modifica decisiva: imposta di nuovo le tue credenziali)",
+                "es": "Almacene las contraseñas y otra información confidencial cifrada (cambio importante: configure sus credenciales nuevamente)",
+                "pl": "Przechowuj hasła i inne poufne informacje w postaci zaszyfrowanej (ważna zmiana - ponownie ustaw swoje dane uwierzytelniające)",
+                "zh-cn": "以加密方式存储密码和其他敏感信息（重大更改-再次设置您的凭据）"
+            },
             "0.4.2": {
                 "en": "Define instanceObject \"info.connection\" to prevent warning with js-controller 3.2.",
                 "de": "instanceObject \"info.connection\" definiert, um eine Warnung mit js-controller 3.2 zu vermeiden.",
