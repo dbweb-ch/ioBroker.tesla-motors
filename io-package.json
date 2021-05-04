@@ -152,6 +152,17 @@
             }
         ]
     },
+    "protectedNative": [
+        "teslaUsername",
+        "teslaPassword",
+        "authToken",
+        "refreshToken"
+    ],
+    "encryptedNative": [
+        "teslaPassword",
+        "authToken",
+        "refreshToken"
+    ],
     "native": {
         "teslaUsername": "",
         "teslaPassword": "",
