@@ -143,6 +143,8 @@
         "mode": "daemon",
         "type": "vehicle",
         "compact": true,
+        "connectionType": "cloud",
+        "dataSource": "poll",
         "materialize": true,
         "materializeTab": false,
         "supportCustoms": false,
