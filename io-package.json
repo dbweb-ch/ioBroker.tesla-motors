@@ -111,11 +111,27 @@
         "title": "Tesla Motors",
         "titleLang": {
             "en": "Tesla Motors",
-            "de": "Tesla Motors"
+            "de": "Tesla Motors",
+            "ru": "Тесла Моторс",
+            "pt": "Tesla Motors",
+            "nl": "Tesla Motors",
+            "fr": "Moteurs Tesla",
+            "it": "Tesla Motors",
+            "es": "Tesla Motors",
+            "pl": "Tesla Motors",
+            "zh-cn": "特斯拉汽车"
         },
         "desc": {
             "en": "Adapter for Tesla Motors cars",
-            "de": "Adapter für Tesla Motors Autos"
+            "de": "Adapter für Tesla Motors Autos",
+            "ru": "Адаптер для автомобилей Tesla Motors",
+            "pt": "Adaptador para carros Tesla Motors",
+            "nl": "Adapter voor Tesla Motors-auto's",
+            "fr": "Adaptateur pour voitures Tesla Motors",
+            "it": "Adattatore per auto Tesla Motors",
+            "es": "Adaptador para automóviles Tesla Motors",
+            "pl": "Adapter do samochodów Tesla Motors",
+            "zh-cn": "特斯拉汽车的适配器"
         },
         "authors": [
             "Dominic Blattmann <nick@dbweb.ch>"
@@ -150,7 +166,7 @@
         "supportCustoms": false,
         "dependencies": [
             {
-                "js-controller": ">=1.4.2"
+                "js-controller": ">=2.0.0"
             }
         ]
     },
