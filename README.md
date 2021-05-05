@@ -98,6 +98,9 @@ Keep your credentials save! <br />To reject all Tokens, change your Tesla accoun
 ## Changelog
 ### 0.5.0
 * (klein0r) Store passwords and other sensitive information encrypted (BREAKING CHANGE)
+### 0.4.3
+* (dbweb-ch) Refresh mode aggressive: change refresh rate to 1 second instead of 1 minute
+* (dbweb-ch) Add homelink support
 ### 0.4.2
 * (dbweb-ch) Define instanceObject \"info.connection\" to prevent warning with js-controller 3.2.
 ### 0.4.1
