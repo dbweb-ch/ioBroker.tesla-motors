@@ -93,6 +93,7 @@ Keep your credentials save! <br />To reject all Tokens, change your Tesla accoun
 * dbweb-ch
 * Apollon77
 * Hombach
+* klein0r
 
 ## Changelog
 ### 0.5.0
