@@ -1,8 +1,20 @@
 {
     "common": {
         "name": "tesla-motors",
-        "version": "0.4.2",
+        "version": "0.5.0",
         "news": {
+            "0.5.0": {
+                "en": "Store passwords and other sensitive information encrypted (breaking change - set your credentials again)",
+                "de": "Passwörter und andere vertrauliche Informationen werden verschlüsselt (breaking change - setzen Sie Ihre Anmeldeinformationen erneut)",
+                "ru": "Храните пароли и другую конфиденциальную информацию в зашифрованном виде (критическое изменение - снова установите учетные данные)",
+                "pt": "Armazene senhas e outras informações confidenciais criptografadas (alteração decisiva - defina suas credenciais novamente)",
+                "nl": "Bewaar wachtwoorden en andere gevoelige informatie versleuteld (wijziging verbreken - stel uw inloggegevens opnieuw in)",
+                "fr": "Stockez les mots de passe et autres informations sensibles chiffrés (changement de rupture - définissez à nouveau vos informations d'identification)",
+                "it": "Memorizza password e altre informazioni sensibili crittografate (modifica decisiva: imposta di nuovo le tue credenziali)",
+                "es": "Almacene las contraseñas y otra información confidencial cifrada (cambio importante: configure sus credenciales nuevamente)",
+                "pl": "Przechowuj hasła i inne poufne informacje w postaci zaszyfrowanej (ważna zmiana - ponownie ustaw swoje dane uwierzytelniające)",
+                "zh-cn": "以加密方式存储密码和其他敏感信息（重大更改-再次设置您的凭据）"
+            },
             "0.4.2": {
                 "en": "Define instanceObject \"info.connection\" to prevent warning with js-controller 3.2.",
                 "de": "instanceObject \"info.connection\" definiert, um eine Warnung mit js-controller 3.2 zu vermeiden.",
@@ -111,11 +123,27 @@
         "title": "Tesla Motors",
         "titleLang": {
             "en": "Tesla Motors",
-            "de": "Tesla Motors"
+            "de": "Tesla Motors",
+            "ru": "Тесла Моторс",
+            "pt": "Tesla Motors",
+            "nl": "Tesla Motors",
+            "fr": "Moteurs Tesla",
+            "it": "Tesla Motors",
+            "es": "Tesla Motors",
+            "pl": "Tesla Motors",
+            "zh-cn": "特斯拉汽车"
         },
         "desc": {
             "en": "Adapter for Tesla Motors cars",
-            "de": "Adapter für Tesla Motors Autos"
+            "de": "Adapter für Tesla Motors Autos",
+            "ru": "Адаптер для автомобилей Tesla Motors",
+            "pt": "Adaptador para carros Tesla Motors",
+            "nl": "Adapter voor Tesla Motors-auto's",
+            "fr": "Adaptateur pour voitures Tesla Motors",
+            "it": "Adattatore per auto Tesla Motors",
+            "es": "Adaptador para automóviles Tesla Motors",
+            "pl": "Adapter do samochodów Tesla Motors",
+            "zh-cn": "特斯拉汽车的适配器"
         },
         "authors": [
             "Dominic Blattmann <nick@dbweb.ch>"
@@ -143,15 +171,28 @@
         "mode": "daemon",
         "type": "vehicle",
         "compact": true,
+        "connectionType": "cloud",
+        "dataSource": "poll",
         "materialize": true,
         "materializeTab": false,
         "supportCustoms": false,
         "dependencies": [
             {
-                "js-controller": ">=1.4.2"
+                "js-controller": ">=2.0.0"
             }
         ]
     },
+    "protectedNative": [
+        "teslaUsername",
+        "teslaPassword",
+        "authToken",
+        "refreshToken"
+    ],
+    "encryptedNative": [
+        "teslaPassword",
+        "authToken",
+        "refreshToken"
+    ],
     "native": {
         "teslaUsername": "",
         "teslaPassword": "",
