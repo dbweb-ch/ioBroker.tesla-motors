@@ -557,6 +557,69 @@
             "native": {}
         },
         {
+            "_id": "command.seat_heater_rear_center",
+            "type": "state",
+            "common": {
+                "name": "Rear center seat heater",
+                "desc": "Level of Seat heater (0 = off,3 = max)",
+                "type": "number",
+                "role": "level",
+                "states": {
+                    "0": "OFF",
+                    "1": "1",
+                    "2": "2",
+                    "3": "MAX"
+                },
+                "read": true,
+                "write": true,
+                "min": 0,
+                "max": 3
+            },
+            "native": {}
+        },
+        {
+            "_id": "command.seat_heater_rear_left",
+            "type": "state",
+            "common": {
+                "name": "Rear left seat heater",
+                "desc": "Level of Seat heater (0 = off,3 = max)",
+                "type": "number",
+                "role": "level",
+                "states": {
+                    "0": "OFF",
+                    "1": "1",
+                    "2": "2",
+                    "3": "MAX"
+                },
+                "read": true,
+                "write": true,
+                "min": 0,
+                "max": 3
+            },
+            "native": {}
+        },
+        {
+            "_id": "command.seat_heater_rear_right",
+            "type": "state",
+            "common": {
+                "name": "Rear right seat heater",
+                "desc": "Level of Seat heater (0 = off,3 = max)",
+                "type": "number",
+                "role": "level",
+                "states": {
+                    "0": "OFF",
+                    "1": "1",
+                    "2": "2",
+                    "3": "MAX"
+                },
+                "read": true,
+                "write": true,
+                "min": 0,
+                "max": 3
+            },
+            "native": {}
+        },
+        {
             "_id": "command.steering_wheel_heater",
             "type": "state",
             "common": {
