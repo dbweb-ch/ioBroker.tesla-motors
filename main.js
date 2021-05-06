@@ -704,7 +704,7 @@ class TeslaMotors extends utils.Adapter {
         Adapter.setState('command.RemoteStart', vd.vehicle_state.remote_start, true);
         Adapter.setState('command.seat_heater_left', vd.climate_state.seat_heater_left, true);
         Adapter.setState('command.seat_heater_right', vd.climate_state.seat_heater_right, true);
-        Adapter.setState('command.steering_wheel_heater', vd.climate_state.steering_wheel_heater, true);
+        Adapter.setState('command.steering_wheel_heater', vd.climate_state.steering_wheel_heater || false, true);
         if(vd.vehicle_state.fd_window || vd.vehicle_state.fp_window || vd.vehicle_state.rd_window || vd.vehicle_state.rp_window){
             Adapter.setState('command.windowVent', true, true);
         }
@@ -743,15 +743,15 @@ class TeslaMotors extends utils.Adapter {
 
         Adapter.setState('climateState.sun_roof_installed', vd.vehicle_config.sun_roof_installed, true);
 
-        Adapter.setState('climateState.front_driver_window', vd.vehicle_state.fd_window, true);
-        Adapter.setState('climateState.front_passenger_window', vd.vehicle_state.fp_window, true);
-        Adapter.setState('climateState.rear_driver_window', vd.vehicle_state.rd_window, true);
-        Adapter.setState('climateState.rear_passenger_window', vd.vehicle_state.rp_window, true);
+        Adapter.setState('climateState.front_driver_window', vd.vehicle_state.fd_window == 1, true);
+        Adapter.setState('climateState.front_passenger_window', vd.vehicle_state.fp_window == 1, true);
+        Adapter.setState('climateState.rear_driver_window', vd.vehicle_state.rd_window == 1, true);
+        Adapter.setState('climateState.rear_passenger_window', vd.vehicle_state.rp_window == 1, true);
 
         Adapter.setState('climateState.wiper_blade_heater', vd.climate_state.wiper_blade_heater, true);
         Adapter.setState('climateState.side_mirror_heaters', vd.climate_state.side_mirror_heaters, true);
         Adapter.setState('climateState.is_preconditioning', vd.climate_state.is_preconditioning, true);
-        Adapter.setState('climateState.smart_preconditioning', vd.climate_state.smart_preconditioning, true);
+        Adapter.setState('climateState.smart_preconditioning', vd.climate_state.smart_preconditioning || false, true);
         Adapter.setState('climateState.is_auto_conditioning_on', vd.climate_state.is_auto_conditioning_on, true);
         Adapter.setState('climateState.battery_heater', vd.climate_state.battery_heater, true);
 
