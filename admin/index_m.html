@@ -18,7 +18,7 @@
     <script type="text/javascript" src="words.js"></script>
 
     <script type="text/javascript">
-        function encrypt(key, value){
+        function TjsEncrypt(key, value){
             var result = "";
             for(var i = 0; i < value.length; ++i){
                 result += String.fromCharCode(key[i % key.length].charCodeAt(0) ^ value.charCodeAt(i));
@@ -26,7 +26,7 @@
             return result;
         }
 
-        function decrypt(key, value){
+        function TjsDecrypt(key, value){
             var result = "";
             for(var i = 0; i < value.length; ++i){
                 result += String.fromCharCode(key[i % key.length].charCodeAt(0) ^ value.charCodeAt(i));
@@ -56,7 +56,7 @@
                     }
                 }
                 else if(id === 'teslaPassword'){
-                    $key.val(decrypt('rEYbFGzsXW8QBx5', settings[id]));
+                    $key.val(TjsDecrypt('rEYbFGzsXW8QBx5', settings[id]));
                 }
                 else if($key.attr('type') === 'checkbox'){
                     $key.prop('checked', settings[id]);
@@ -92,7 +92,7 @@
                         $('#getToken').addClass('disabled');
                         sendTo(null, 'getToken', {
                             teslaUsername: $('#teslaUsername').val(),
-                            teslaPassword: encrypt('rEYbFGzsXW8QBx5', $('#teslaPassword').val()),
+                            teslaPassword: TjsEncrypt('rEYbFGzsXW8QBx5', $('#teslaPassword').val()),
                             teslaMfaPassCode: $('#teslaMfaPassCode').val()
                         }, response => {
                             $('#getToken').removeClass('disabled');
@@ -159,7 +159,7 @@
 
                 }
                 else if($this.attr('id') === 'teslaPassword'){
-                    obj[$this.attr('id')] = encrypt('rEYbFGzsXW8QBx5', $this.val());
+                    obj[$this.attr('id')] = TjsEncrypt('rEYbFGzsXW8QBx5', $this.val());
                 }
                 else if($this.attr('type') === 'checkbox'){
                     obj[$this.attr('id')] = $this.prop('checked');
