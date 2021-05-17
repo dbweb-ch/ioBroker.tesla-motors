@@ -766,8 +766,8 @@ class TeslaMotors extends utils.Adapter {
 
         Adapter.setState('vehicle.is_user_present', vd.vehicle_state.is_user_present, true);
         Adapter.setState('vehicle.odometer', Adapter.m_km(vd.vehicle_state.odometer), true);
-        Adapter.setState('vehicle.homelink_device_count', vd.vehicle_state.homelink_device_count, true);
-        Adapter.setState('vehicle.homelink_nearby', vd.vehicle_state.homelink_nearby, true);
+        Adapter.setState('vehicle.homelink_device_count', vd.vehicle_state.homelink_device_count || 0, true);
+        Adapter.setState('vehicle.homelink_nearby', vd.vehicle_state.homelink_nearby || false, true);
         Adapter.setState('vehicle.car_type', vd.vehicle_config.car_type, true);
 
 
