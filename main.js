@@ -104,7 +104,7 @@ class TeslaMotors extends utils.Adapter {
         switch(Adapter.config.wakeupPlan){
             case 'aggressive':
                 await Adapter.GetAllInfo();
-                Adapter.RefreshAllInfoTimeout = setTimeout(() => Adapter.RefreshAllInfoTask(), 60 * 1000); // once per minute
+                Adapter.RefreshAllInfoTimeout = setTimeout(() => Adapter.RefreshAllInfoTask(), 1000); // once per second
                 break;
             case 'temperate':
                 await Adapter.GetAllInfo();
@@ -216,6 +216,24 @@ class TeslaMotors extends utils.Adapter {
                     }
                     else{
                         await tjs.doorUnlockAsync(options);
+                    }
+                    break;
+                case 'command.homelink':
+                    const latitude = await Adapter.getStateAsync('driveState.latitude');
+                    const longitude = await Adapter.getStateAsync('driveState.longitude');
+                    const devices = await Adapter.getStateAsync('vehicle.homelink_device_count');
+                    const nearby = await Adapter.getStateAsync('vehicle.homelink_nearby');
+                    if(!latitude || !longitude || !devices || !nearby){
+                        Adapter.log.warn('Not all states exists for homelink');
+                        break;
+                    }
+                    Adapter.log.debug("Homelink devices: " + devices.val + " Nearby: " + nearby.val == true ? 'Yes' : 'No');
+                    const res = await tjs.homelinkAsync(options, latitude.val, longitude.val);
+                    if(res.result){
+                        Adapter.log.debug("Homelink: " + "Door signaled!");
+                    }
+                    else{
+                        Adapter.log.warn("Homelink: " + res.result);
                     }
                     break;
                 case 'command.honkHorn':
@@ -686,7 +704,7 @@ class TeslaMotors extends utils.Adapter {
         Adapter.setState('command.RemoteStart', vd.vehicle_state.remote_start, true);
         Adapter.setState('command.seat_heater_left', vd.climate_state.seat_heater_left, true);
         Adapter.setState('command.seat_heater_right', vd.climate_state.seat_heater_right, true);
-        Adapter.setState('command.steering_wheel_heater', vd.climate_state.steering_wheel_heater, true);
+        Adapter.setState('command.steering_wheel_heater', vd.climate_state.steering_wheel_heater || false, true);
         if(vd.vehicle_state.fd_window || vd.vehicle_state.fp_window || vd.vehicle_state.rd_window || vd.vehicle_state.rp_window){
             Adapter.setState('command.windowVent', true, true);
         }
@@ -725,15 +743,15 @@ class TeslaMotors extends utils.Adapter {
 
         Adapter.setState('climateState.sun_roof_installed', vd.vehicle_config.sun_roof_installed, true);
 
-        Adapter.setState('climateState.front_driver_window', vd.vehicle_state.fd_window, true);
-        Adapter.setState('climateState.front_passenger_window', vd.vehicle_state.fp_window, true);
-        Adapter.setState('climateState.rear_driver_window', vd.vehicle_state.rd_window, true);
-        Adapter.setState('climateState.rear_passenger_window', vd.vehicle_state.rp_window, true);
+        Adapter.setState('climateState.front_driver_window', vd.vehicle_state.fd_window == 1, true);
+        Adapter.setState('climateState.front_passenger_window', vd.vehicle_state.fp_window == 1, true);
+        Adapter.setState('climateState.rear_driver_window', vd.vehicle_state.rd_window == 1, true);
+        Adapter.setState('climateState.rear_passenger_window', vd.vehicle_state.rp_window == 1, true);
 
         Adapter.setState('climateState.wiper_blade_heater', vd.climate_state.wiper_blade_heater, true);
         Adapter.setState('climateState.side_mirror_heaters', vd.climate_state.side_mirror_heaters, true);
         Adapter.setState('climateState.is_preconditioning', vd.climate_state.is_preconditioning, true);
-        Adapter.setState('climateState.smart_preconditioning', vd.climate_state.smart_preconditioning, true);
+        Adapter.setState('climateState.smart_preconditioning', vd.climate_state.smart_preconditioning || false, true);
         Adapter.setState('climateState.is_auto_conditioning_on', vd.climate_state.is_auto_conditioning_on, true);
         Adapter.setState('climateState.battery_heater', vd.climate_state.battery_heater, true);
 
@@ -748,7 +766,10 @@ class TeslaMotors extends utils.Adapter {
 
         Adapter.setState('vehicle.is_user_present', vd.vehicle_state.is_user_present, true);
         Adapter.setState('vehicle.odometer', Adapter.m_km(vd.vehicle_state.odometer), true);
+        Adapter.setState('vehicle.homelink_device_count', vd.vehicle_state.homelink_device_count || 0, true);
+        Adapter.setState('vehicle.homelink_nearby', vd.vehicle_state.homelink_nearby || false, true);
         Adapter.setState('vehicle.car_type', vd.vehicle_config.car_type, true);
+
 
         Adapter.setState('softwareUpdate.download_percentage', vd.vehicle_state.software_update.download_perc, true);
         Adapter.setState('softwareUpdate.expected_duration_sec', vd.vehicle_state.software_update.expected_duration_sec, true);
