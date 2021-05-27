@@ -10,8 +10,9 @@ os:
 language: node_js
 node_js:
   - '12'
-  - '10'
   - '14'
+  - '10'
+  - '16'
 
 before_script:
   - export NPMVERSION=$(echo "$($(which npm) -v)"|cut -c1)
