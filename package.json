@@ -1,6 +1,6 @@
 {
   "name": "iobroker.tesla-motors",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Adapter for Tesla Motors cars",
   "author": {
     "name": "Dominic Blattmann",
@@ -26,7 +26,7 @@
   "devDependencies": {
     "chai": "^4.3.3",
     "gulp": "^4.0.0",
-    "mocha": "^8.3.1"
+    "mocha": "^9.0.0"
   },
   "main": "main.js",
   "scripts": {
