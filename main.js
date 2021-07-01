@@ -668,8 +668,8 @@ class TeslaMotors extends utils.Adapter {
         try{
             vd = await new Promise(async (resolve, reject) => {
                 tjs.vehicleData(options, (err, data) => {
-                    Adapter.log.debug("Answer from vehicleState:" + JSON.stringify(data) + JSON.stringify(err));
                     if(err){
+                        Adapter.log.debug("Answer from vehicleState:" + JSON.stringify(data) + JSON.stringify(err));
                         if(Adapter.config.vehicle_id_s != id_s.val){
                             Adapter.config.vehicle_id_s = id_s.val;
                         }
