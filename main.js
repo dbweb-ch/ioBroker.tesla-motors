@@ -609,7 +609,7 @@ class TeslaMotors extends utils.Adapter {
         const State = await Adapter.getStateAsync('info.connection');
         if(!State){
             Adapter.log.warn('You tried to wake up the car, but there is currently no valid Token, please configure Adapter first!');
-            return;
+            return false;
         }
         // Check if in standby
         await Adapter.GetStandbyInfo();
@@ -617,7 +617,7 @@ class TeslaMotors extends utils.Adapter {
         standby = await Adapter.getStateAsync('command.standby');
         if(standby && !standby.val && standby.ack){
             Adapter.log.debug("Wanted to wake up the car, but car is already awake.");
-            return;
+            return true;
         }
 
         Adapter.log.debug('Waking up the car...');
