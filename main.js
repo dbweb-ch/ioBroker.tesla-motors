@@ -19,9 +19,13 @@ class TeslaMotors extends utils.Adapter {
         this.on('message', this.onMessage.bind(this));
         this.distanceUnit = '';
         this.WakeItUpRetryCount = 30;
-        this.lastTimeWokeUp = new Date();
+        let dateNow = new Date();
+        this.lastTimeWokeUp = dateNow;
+        // Reset to 25 minutes ago to prevent from waking up the car every time the adapter restarts
+        this.lastTimeWokeUp.setMinutes(dateNow.getMinutes() - 25);
+        this.lastOverallRequest = new Date();
+        this.lastOverallRequest.setDate(dateNow.getDate() - 7);
         this.lastWakeState = false;
-        this.refreshData = false;
 
         // Timeouts and intervals
         this.RefreshTokenTimeout = null;
@@ -46,7 +50,6 @@ class TeslaMotors extends utils.Adapter {
         await Adapter.RefreshTokenTask();
         await Adapter.RefreshStandbyInfoTask();
         await Adapter.RefreshAllInfoTask();
-        await Adapter.CheckRefreshRequestTask();
     }
 
     onUnload(callback){
@@ -82,19 +85,13 @@ class TeslaMotors extends utils.Adapter {
 
     async RefreshStandbyInfoTask(){
         const Adapter = this;
-        await Adapter.GetStandbyInfo();
+        // Only request if last overall request is also one minute ago
+        const seconds = Math.floor((new Date().getTime() - this.lastOverallRequest.getTime()) / 1000);
+        if(seconds > 59){
+            await Adapter.GetStandbyInfo();
+        }
         // Check every minute the standby Info
         this.GetStandbyInfoTimeout = setTimeout(() => Adapter.RefreshStandbyInfoTask(), 60 * 1000);
-    }
-
-    async CheckRefreshRequestTask(){
-        const Adapter = this;
-        if(this.refreshData){
-            this.log.debug('Refresh of full Data requested');
-            this.refreshData = false;
-            await this.GetAllInfo();
-        }
-        this.RefreshRequestTimeout = setTimeout(() => Adapter.CheckRefreshRequestTask(), 1000);
     }
 
     async RefreshAllInfoTask(){
@@ -143,6 +140,7 @@ class TeslaMotors extends utils.Adapter {
 
                 if(inUse.length > 0){
                     this.lastTimeWokeUp = new Date();
+                    Minutes = 0;
                     Adapter.log.debug("Reset last wake up time because car seems to be in use (Reason: " + inUse + ").");
                 }
                 if((shift_state && shift_state.val !== null && shift_state.val !== "P") ||
@@ -150,7 +148,7 @@ class TeslaMotors extends utils.Adapter {
                     NextRefresh = 1;
                 }
                 if(Minutes <= 10){
-                    Adapter.log.debug("Get all info because last Wakeup time is only " + Minutes + "ago.");
+                    Adapter.log.debug("Get all info because last time it woke up is only " + Minutes + " Minutes ago.");
                     await Adapter.GetAllInfo();
                 }
                 else if(Minutes > 10 && Minutes <= 25){
@@ -169,10 +167,6 @@ class TeslaMotors extends utils.Adapter {
                     else{
                         Adapter.log.debug("Car fall asleep successfully, will leave him alone for a while...");
                     }
-                }
-                else if(Minutes > 60 * 12){
-                    Adapter.log.debug("Car was sleeping for > 12 hours, Update information");
-                    await Adapter.GetAllInfo();
                 }
 
                 Adapter.RefreshAllInfoTimeout = setTimeout(() => Adapter.RefreshAllInfoTask(), NextRefresh * 1000); // check every Second
@@ -203,7 +197,8 @@ class TeslaMotors extends utils.Adapter {
         const currentId = id.substring(Adapter.namespace.length + 1);
         if(state && !state.ack){
             let requestDataChange = true;
-            await Adapter.WakeItUp();
+            const awake = await Adapter.WakeItUp();
+            if(!awake) return;
             switch(currentId){
                 case 'command.standby':
                     if(state.val){
@@ -240,14 +235,12 @@ class TeslaMotors extends utils.Adapter {
                     if(state.val){
                         await tjs.honkHornAsync(options);
                         Adapter.setState('command.honkHorn', false, true);
-                        requestDataChange = false;
                     }
                     break;
                 case 'command.flashLight':
                     if(state.val){
                         await tjs.flashLightsAsync(options);
                         Adapter.setState('command.flashLight', false, true);
-                        requestDataChange = false;
                     }
                     break;
                 case 'command.Climate':
@@ -290,7 +283,6 @@ class TeslaMotors extends utils.Adapter {
                         await tjs.openChargePortAsync(options);
                     }
                     Adapter.setState('command.UnlockChargePort', false, true);
-                    requestDataChange = false;
                     break;
                 case 'command.Charging':
                     if(state.val){
@@ -391,19 +383,17 @@ class TeslaMotors extends utils.Adapter {
                 case 'command.openTrunk':
                     await tjs.openTrunkAsync(options, tjs.TRUNK);
                     Adapter.setState('command.openTrunk', false, true);
-                    requestDataChange = false;
                     break;
                 case 'command.openFrunk':
                     await tjs.openTrunkAsync(options, tjs.FRUNK);
                     Adapter.setState('command.openFrunk', false, true);
-                    requestDataChange = false;
                     break;
                 default:
                     requestDataChange = false;
                     break;
             }
-            if(requestDataChange){
-                Adapter.refreshData = true;
+            if(requestDataChange){ // After a manual request, always reset sleep timer, but only to 2 minutes
+                this.lastTimeWokeUp.setMinutes(new Date().getMinutes() - 8);
             }
             this.log.info(`state ${id} changed: ${state.val} (ack = ${state.ack})`);
         }
@@ -577,7 +567,7 @@ class TeslaMotors extends utils.Adapter {
                 Adapter.log.warn('Invalid answer from Vehicle request. Error: ' + err);
                 return resolve();
             }
-
+            this.lastOverallRequest = new Date();
             Adapter.log.debug('vehicle Answer:' + JSON.stringify(vehicle));
 
             await Adapter.setStateAsync('vehicle.id_s', vehicle.id_s, true);
@@ -588,9 +578,22 @@ class TeslaMotors extends utils.Adapter {
             await Adapter.setStateAsync('vehicle.color', vehicle.color, true);
 
             if(vehicle.state === 'online' && !this.lastWakeState){
-                // Car was sleeping before, but woke up now. So we trigger a refresh of data
-                this.refreshData = true;
-                this.lastTimeWokeUp = new Date();
+                // Car was sleeping before, but woke up now. So we reset the sleep timer
+                // Only reset if it was sleeping long enough
+                const Minutes = Math.floor((new Date().getTime() - this.lastTimeWokeUp.getTime()) / 60000);
+                if(Minutes >= 9 && Minutes < 25){
+                    // Car fell asleep while trying to let him, but then woke up due to some interaction
+                    // As this might be intended, we reset the timer to 9 minutes, this
+                    // give 1 minute to set "inUse", but prevents to let the car awake for another 10 minutes at least.
+                    // If last wake up is < 10, then the process is already running anyway, no need to interrupt.
+                    this.lastTimeWokeUp.setMinutes(new Date().getMinutes() - 9);
+                }
+                else if(Minutes > 25){
+                    // If car woke up more than 25 minutes ago last time we assume this is intended.
+                    // We give the user 5 minutes to interact before car trys to sleep again.
+                    this.lastTimeWokeUp.setMinutes(new Date().getMinutes() - 5);
+                }
+
                 Adapter.log.debug("Reset last wake up time because car was sleeping before, but woke up now.");
             }
             this.lastWakeState = vehicle.state === 'online';
@@ -614,35 +617,33 @@ class TeslaMotors extends utils.Adapter {
             return;
         }
 
-        await new Promise(async resolve => {
-            Adapter.log.debug('Waking up the car...');
-            let options = {
-                authToken: Adapter.config.authToken,
-                vehicleID: Adapter.config.vehicle_id_s
-            };
-            await tjs.wakeUp(options, async (err, data) => {
-                Adapter.WakeItUpRetryCount--;
-                Adapter.log.debug("Wake up Response:" + JSON.stringify(data) + JSON.stringify(err));
-                if(err || data.state !== "online"){
-                    if(Adapter.WakeItUpRetryCount > 0){
-                        Adapter.log.debug("Cant wake up the car, Retrying in 2 Seconds...");
-                        await Sleep(2000);
-                        await Adapter.WakeItUp();
-                    }
-                    else{
-                        Adapter.log.warn("Was not able to wake up the car within 50 Seconds. Car has maybe no internet connection");
-                        Adapter.WakeItUpRetryCount = 30;
-                    }
-                }
-                else{
-                    Adapter.log.debug("Car is Awake");
-                    await Adapter.setStateAsync('command.standby', false, true);
-                    Adapter.WakeItUpRetryCount = 30;
-                }
-            });
-            resolve();
-        });
+        Adapter.log.debug('Waking up the car...');
+        let options = {
+            authToken: Adapter.config.authToken,
+            vehicleID: Adapter.config.vehicle_id_s
+        };
+        try{
+            Adapter.WakeItUpRetryCount--;
+            Adapter.lastOverallRequest = new Date();
+            const data = await tjs.wakeUpAsync(options);
+            if(data.state != "online") throw 'notOnline';
+        }
+        catch(err){
+            if(Adapter.WakeItUpRetryCount > 0){
+                Adapter.log.debug("Cant wake up the car, Retrying in 2 Seconds...");
+                await Sleep(2000);
+                await Adapter.WakeItUp();
+            }
+            else{
+                Adapter.log.warn("Was not able to wake up the car within 50 Seconds. Car has maybe no internet connection or tesla server is offline. Try to use the app instead.");
+                Adapter.WakeItUpRetryCount = 30;
+            }
+            return false;
+        }
+        await Adapter.setStateAsync('command.standby', false, true);
+        Adapter.WakeItUpRetryCount = 30;
         Adapter.log.debug("Wake it Up Successful");
+        return true;
     }
 
     async GetAllInfo(){
@@ -652,7 +653,8 @@ class TeslaMotors extends utils.Adapter {
             Adapter.log.warn('You tried to wake up the car, but there is currently no valid Token, please configure Adapter first!');
             return;
         }
-        await this.WakeItUp();
+        const awake = await this.WakeItUp();
+        if(!awake) return;
         Adapter.log.debug('Getting all States now');
         let options = {
             authToken: Adapter.config.authToken,
@@ -681,6 +683,7 @@ class TeslaMotors extends utils.Adapter {
             return;
         }
 
+        this.lastOverallRequest = new Date();
         Adapter.log.debug("Vehicle Data: " + JSON.stringify(vd));
 
         // km or miles?
