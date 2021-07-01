@@ -60,6 +60,10 @@
                 }
                 else if($key.attr('type') === 'checkbox'){
                     $key.prop('checked', settings[id]);
+                    if(id === 'useMfa'){
+                        $('#colTeslaMfaPassCode').toggle(settings[id]);
+                        $('#colSaveCredentials').toggle(!settings[id]);
+                    }
                 }
                 else{
                     $key.val(settings[id]);
