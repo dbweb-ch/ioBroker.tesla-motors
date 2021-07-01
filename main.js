@@ -22,7 +22,7 @@ class TeslaMotors extends utils.Adapter {
         let dateNow = new Date();
         this.lastTimeWokeUp = dateNow;
         // Reset to 25 minutes ago to prevent from waking up the car every time the adapter restarts
-        this.lastTimeWokeUp.setMinutes(dateNow.getMinutes() - 25);
+        this.lastTimeWokeUp.setMinutes(dateNow.getMinutes() - 26);
         this.lastOverallRequest = new Date();
         this.lastOverallRequest.setDate(dateNow.getDate() - 7);
         this.lastWakeState = false;
@@ -149,10 +149,12 @@ class TeslaMotors extends utils.Adapter {
                 }
                 if(Minutes <= 10){
                     Adapter.log.debug("Get all info because last time it woke up is only " + Minutes + " Minutes ago.");
+                    NextRefresh = 10;
                     await Adapter.GetAllInfo();
                 }
                 else if(Minutes > 10 && Minutes <= 25){
                     // Don't do anything, try to let the car sleep...
+                    NextRefresh = 30;
                     Adapter.log.debug("Don't wake up the car and let it go to sleep. Minutes since last woke up: " + Minutes);
                 }
                 else if(Minutes > 25){
@@ -166,6 +168,7 @@ class TeslaMotors extends utils.Adapter {
                     }
                     else{
                         Adapter.log.debug("Car fall asleep successfully, will leave him alone for a while...");
+                        NextRefresh = 10;
                     }
                 }
 
@@ -588,7 +591,7 @@ class TeslaMotors extends utils.Adapter {
                     // If last wake up is < 10, then the process is already running anyway, no need to interrupt.
                     this.lastTimeWokeUp.setMinutes(new Date().getMinutes() - 9);
                 }
-                else if(Minutes > 25){
+                else if(Minutes >= 25){
                     // If car woke up more than 25 minutes ago last time we assume this is intended.
                     // We give the user 5 minutes to interact before car trys to sleep again.
                     this.lastTimeWokeUp.setMinutes(new Date().getMinutes() - 5);
