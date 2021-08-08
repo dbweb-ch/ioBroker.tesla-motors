@@ -1,6 +1,6 @@
 {
   "name": "iobroker.tesla-motors",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "description": "Adapter for Tesla Motors cars",
   "author": {
     "name": "Dominic Blattmann",

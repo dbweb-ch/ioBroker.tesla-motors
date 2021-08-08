@@ -97,6 +97,8 @@ Keep your credentials save! <br />To reject all Tokens, change your Tesla accoun
 
 ## Changelog
 Note that missing version entries are typically dependency updates for security.
+### 0.5.4
+* (Hombach) Fixed vulnerability; removed tests for node 10
 ### 0.5.1
 * (Hombach) Added tests for node 16; updated dependencies
 ### 0.5.0

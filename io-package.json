@@ -1,7 +1,7 @@
 {
     "common": {
         "name": "tesla-motors",
-        "version": "0.5.3",
+        "version": "0.5.4",
         "news": {
             "0.5.0": {
                 "en": "Store passwords and other sensitive information encrypted (breaking change - set your credentials again)",
