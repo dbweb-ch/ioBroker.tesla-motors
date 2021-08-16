@@ -96,6 +96,9 @@ Keep your credentials save! <br />To reject all Tokens, change your Tesla accoun
 
 ## Changelog
 Note that missing version entries are typically dependency updates for security.
+### 0.5.4
+* (Hombach) Fixed vulnerability; removed tests for node 10
+* (dbweb-ch) Enable to manual entry tokens
 ### 0.5.3
 * (dbweb-ch) Improved smart wakeup plan
 * (dbweb-ch) wakeup more reliable on action request

@@ -1,7 +1,7 @@
 {
     "common": {
         "name": "tesla-motors",
-        "version": "0.5.3",
+        "version": "0.5.4",
         "news": {
             "0.5.3": {
                 "en": "Improved smart wakeup plan and wakeup more reliable on action request",
