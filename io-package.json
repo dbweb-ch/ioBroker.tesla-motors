@@ -686,7 +686,20 @@
                 "name": "Vent Window",
                 "desc": "Hint: Can also be used to close all windows",
                 "type": "boolean",
-                "role": "switch.lock.window",
+                "role": "button.open.window",
+                "read": true,
+                "write": true
+            },
+            "native": {}
+        },
+        {
+            "_id": "command.SunRoofVent",
+            "type": "state",
+            "common": {
+                "name": "Vent Sunroof",
+                "desc": "Sets sunroof to vent position",
+                "type": "boolean",
+                "role": "button.open.window",
                 "read": true,
                 "write": true
             },
@@ -992,6 +1005,19 @@
                 "name": "Sun Roof Installed",
                 "type": "boolean",
                 "role": "indicator",
+                "read": true,
+                "write": false
+            },
+            "native": {}
+        },
+        {
+            "_id": "climateState.sun_roof_percent_open",
+            "type": "state",
+            "common": {
+                "name": "Percentage the sunroof is open",
+                "type": "number",
+                "role": "level",
+                "unit": "%",
                 "read": true,
                 "write": false
             },
