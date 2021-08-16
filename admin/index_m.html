@@ -60,6 +60,10 @@
                 }
                 else if($key.attr('type') === 'checkbox'){
                     $key.prop('checked', settings[id]);
+                    if(id === 'useMfa'){
+                        $('#colTeslaMfaPassCode').toggle(settings[id]);
+                        $('#colSaveCredentials').toggle(!settings[id]);
+                    }
                 }
                 else{
                     $key.val(settings[id]);
@@ -221,11 +225,11 @@
             <a id="getToken" class="waves-effect waves-light btn"><span class="translate">Get Token</span></a>
         </div>
         <div class="col s4 input-field">
-            <input type="text" class="value" id="authToken" readonly="readonly"/>
+            <input type="text" class="value" id="authToken"/>
             <label for="authToken" class="translate">Token</label>
         </div>
         <div class="col s4 input-field">
-            <input type="text" class="value" id="refreshToken" readonly="readonly"/>
+            <input type="text" class="value" id="refreshToken"/>
             <label for="refreshToken" class="translate">Refresh Token</label>
         </div>
         <div class="col s2 input-field">

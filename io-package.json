@@ -3,6 +3,18 @@
         "name": "tesla-motors",
         "version": "0.5.4",
         "news": {
+            "0.5.3": {
+                "en": "Improved smart wakeup plan and wakeup more reliable on action request",
+                "de": "Verbesserter intelligenter Aufwachplan und zuverlässigeres Aufwachen auf Aktionsanforderung",
+                "ru": "Улучшенный план интеллектуального пробуждения и более надежное пробуждение по запросу",
+                "pt": "Plano de despertar inteligente aprimorado e despertar mais confiável mediante solicitação de ação",
+                "nl": "Verbeterd slim ontwaakplan en ontwaken betrouwbaarder op actieverzoek",
+                "fr": "Plan de réveil intelligent amélioré et réveil plus fiable sur demande d'action",
+                "it": "Piano di risveglio intelligente migliorato e risveglio più affidabile su richiesta di azione",
+                "es": "Plan de activación inteligente mejorado y activación más confiable cuando se solicita una acción",
+                "pl": "Ulepszony plan inteligentnego wybudzania i bardziej niezawodne wybudzanie na żądanie działania",
+                "zh-cn": "改进的智能唤醒计划和唤醒更可靠的动作请求"
+            },
             "0.5.0": {
                 "en": "Store passwords and other sensitive information encrypted (breaking change - set your credentials again)",
                 "de": "Passwörter und andere vertrauliche Informationen werden verschlüsselt (breaking change - setzen Sie Ihre Anmeldeinformationen erneut)",
