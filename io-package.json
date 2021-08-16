@@ -235,7 +235,7 @@
             "type": "state",
             "common": {
                 "name": "Timestamp of when the token will expire",
-                "type": "number",
+                "type": "string",
                 "read": true,
                 "write": false,
                 "role": "date.end",

@@ -41,7 +41,7 @@ class TeslaMotors extends utils.Adapter {
         this.log.debug('Starting Tesla Motors');
         const Adapter = this;
         await Adapter.setStateAsync('info.connection', false, true);
-        await this.setStateAsync('info.tokenExpire', Adapter.config.tokenExpire, true);
+        await this.setStateAsync('info.tokenExpire', (new Date(Adapter.config.tokenExpire)).toISOString(), true);
 
         this.log.debug('All Objects installed, setting up tasks now');
 
@@ -537,7 +537,7 @@ class TeslaMotors extends utils.Adapter {
         obj.native.tokenExpire = Adapter.config.tokenExpire = ExpireDate.getTime();
         await Adapter.setForeignObjectAsync('system.adapter.tesla-motors.0', obj);
         await Adapter.setStateAsync('info.connection', true, true);
-        await Adapter.setStateAsync('info.tokenExpire', Adapter.config.tokenExpire, true);
+        await Adapter.setStateAsync('info.tokenExpire', ExpireDate.toISOString(), true);
     }
 
     /**
