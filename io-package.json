@@ -231,6 +231,19 @@
             "native": {}
         },
         {
+            "_id": "info.tokenExpire",
+            "type": "state",
+            "common": {
+                "name": "Timestamp of when the token will expire",
+                "type": "number",
+                "read": true,
+                "write": false,
+                "role": "date.end",
+                "def": false
+            },
+            "native": {}
+        },
+        {
             "_id": "command",
             "type": "channel",
             "common": {
