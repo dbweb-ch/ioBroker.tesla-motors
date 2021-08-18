@@ -158,6 +158,30 @@ systemDictionary = {
         "pl": "Wybierz swój samochód",
         "zh-cn": "选择你的车"
     },
+    "Manually enter Token": {
+        "en": "Manually enter Token",
+        "de": "Token manuell eingeben",
+        "ru": "Ввести токен вручную",
+        "pt": "Insira o token manualmente",
+        "nl": "Token handmatig invoeren",
+        "fr": "Entrer manuellement le jeton",
+        "it": "Inserisci manualmente il token",
+        "es": "Ingrese el token manualmente",
+        "pl": "Ręcznie wprowadź token",
+        "zh-cn": "手动输入Token"
+    },
+    "Get Vehicles": {
+        "en": "Get Vehicles",
+        "de": "Fahrzeuge holen",
+        "ru": "Получить автомобили",
+        "pt": "Obter veículos",
+        "nl": "Voertuigen ophalen",
+        "fr": "Obtenir des véhicules",
+        "it": "Ottieni veicoli",
+        "es": "Obtener vehículos",
+        "pl": "Zdobądź pojazdy",
+        "zh-cn": "获取车辆"
+    },
     "You have to get a Token before storing!": {
         "en": "You have to get a Token before storing!",
         "de": "Sie müssen ein Token holen, bevor sie speichern können!",
@@ -181,5 +205,53 @@ systemDictionary = {
         "es": "Por favor, inicie el adaptador primero",
         "pl": "Najpierw uruchom adapter",
         "zh-cn": "请先启动适配器"
+    },
+    "Save not possible, there is no vehicle selected.": {
+        "en": "Save not possible, there is no vehicle selected.",
+        "de": "Speichern nicht möglich, es ist kein Fahrzeug ausgewählt.",
+        "ru": "Сохранить невозможно, автомобиль не выбран.",
+        "pt": "Não é possível salvar, não há nenhum veículo selecionado.",
+        "nl": "Opslaan niet mogelijk, er is geen voertuig geselecteerd.",
+        "fr": "Sauvegarde impossible, aucun véhicule n'est sélectionné.",
+        "it": "Salvataggio non possibile, nessun veicolo selezionato.",
+        "es": "Guardar no es posible, no hay ningún vehículo seleccionado.",
+        "pl": "Zapisywanie niemożliwe, nie wybrano pojazdu.",
+        "zh-cn": "无法保存，没有选择车辆。"
+    },
+    "Your token is too short": {
+        "en": "Your token is too short",
+        "de": "Ihr Token ist zu kurz",
+        "ru": "Ваш токен слишком короткий",
+        "pt": "Seu token é muito curto",
+        "nl": "Je token is te kort",
+        "fr": "Votre jeton est trop court",
+        "it": "Il tuo token è troppo corto",
+        "es": "Tu ficha es demasiado corta",
+        "pl": "Twój token jest za krótki",
+        "zh-cn": "你的令牌太短"
+    },
+    "Could not get any vehicle": {
+        "en": "Could not get any vehicle",
+        "de": "Konnte kein Fahrzeug bekommen",
+        "ru": "Не удалось получить автомобиль",
+        "pt": "Não foi possível obter nenhum veículo",
+        "nl": "Kon geen voertuig krijgen",
+        "fr": "Impossible d'obtenir un véhicule",
+        "it": "Non è stato possibile ottenere alcun veicolo",
+        "es": "No se pudo conseguir ningún vehículo",
+        "pl": "Nie udało się zdobyć żadnego pojazdu",
+        "zh-cn": "无法获得任何车辆"
+    },
+    "explain_manual_entry": {
+        "en": "If you don't get an answer from Tesla, there is most likely a change tesla made the library does not yet support.<br />\nTo still be able to use it, you can enter the token manually.",
+        "de": "Wenn Sie keine Antwort von Tesla erhalten, gibt es höchstwahrscheinlich eine Änderung, die Tesla vorgenommen hat, die die Bibliothek noch nicht unterstützt.<br />\nUm ihn trotzdem nutzen zu können, können Sie den Token manuell eingeben.",
+        "ru": "Если вы не получили ответа от Tesla, скорее всего, Tesla внесла изменение, которое библиотека еще не поддерживает.<br />\nЧтобы по-прежнему иметь возможность использовать его, вы можете ввести токен вручную.",
+        "pt": "Se você não obtiver uma resposta do Tesla, provavelmente há uma alteração que o Tesla tornou a biblioteca ainda não compatível.<br />\nPara ainda ser capaz de usá-lo, você pode inserir o token manualmente.",
+        "nl": "Als je geen antwoord krijgt van Tesla, is er hoogstwaarschijnlijk een wijziging aangebracht die de bibliotheek nog niet ondersteunt.<br />\nOm het toch te kunnen gebruiken, kunt u het token handmatig invoeren.",
+        "fr": "Si vous n'obtenez pas de réponse de Tesla, il y a très probablement un changement que Tesla a fait que la bibliothèque ne prend pas encore en charge.<br />\nPour pouvoir toujours l'utiliser, vous pouvez saisir le jeton manuellement.",
+        "it": "Se non ricevi una risposta da Tesla, è molto probabile che ci sia una modifica apportata da Tesla che la libreria non supporta ancora.<br />\nPer poterlo ancora utilizzare, puoi inserire il token manualmente.",
+        "es": "Si no recibe una respuesta de Tesla, lo más probable es que haya un cambio que Tesla hizo que la biblioteca aún no es compatible.<br />\nPara poder seguir utilizándolo, puede ingresar el token manualmente.",
+        "pl": "Jeśli nie otrzymasz odpowiedzi od Tesli, najprawdopodobniej istnieje zmiana, którą tesla sprawiła, że biblioteka jeszcze nie obsługuje.<br />\nAby nadal móc z niego korzystać, możesz wprowadzić token ręcznie.",
+        "zh-cn": "如果您没有从 Tesla 得到答复，很可能是 tesla 做出了库尚不支持的更改。<br />\n为了仍然能够使用它，您可以手动输入令牌。"
     }
 };

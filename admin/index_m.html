@@ -48,21 +48,24 @@
                 let $key = $(this);
                 let id = $key.attr('id');
                 if(id === 'tokenExpire'){
+                    let date;
                     if(parseInt(settings[id]) > 0){
-                        $key.val(new Date(settings[id]).toLocaleString()).prop('timestamp', settings[id]);
+                        date = new Date(settings[id]);
                     }
                     else {
-                        $key.val('');
+                        date = new Date();
+                        date.setDate(date.getDate() + 60);
                     }
-                }
-                else if(id === 'teslaPassword'){
-                    $key.val(TjsDecrypt('rEYbFGzsXW8QBx5', settings[id]));
+                    $key.val(date.toJSON().slice(0, 10));
                 }
                 else if($key.attr('type') === 'checkbox'){
                     $key.prop('checked', settings[id]);
                     if(id === 'useMfa'){
                         $('#colTeslaMfaPassCode').toggle(settings[id]);
                         $('#colSaveCredentials').toggle(!settings[id]);
+                    }
+                    if(id === 'enterManually'){
+                        toggleEm(settings[id]);
                     }
                 }
                 else{
@@ -82,6 +85,8 @@
             $('#wakeupPlan').on('change', () => onChange());
             $('#vehicle_id_s').on('change', () => onChange());
 
+            $('#refreshToken, #authToken, #tokenExpire').on('change', () => onChange());
+
             $('#teslaUsername, #teslaPassword, #teslaMfaPassCode').on('change keyup', () => {
                 $('#authToken, #refreshToken, #tokenExpire').val('').attr('timestamp', 0);
             });
@@ -97,7 +102,7 @@
                         sendTo(null, 'getToken', {
                             teslaUsername: $('#teslaUsername').val(),
                             teslaPassword: TjsEncrypt('rEYbFGzsXW8QBx5', $('#teslaPassword').val()),
-                            teslaMfaPassCode: $('#teslaMfaPassCode').val()
+                            teslaMfaPassCode: TjsEncrypt('rEYbFGzsXW8QBx5', $('#teslaMfaPassCode').val())
                         }, response => {
                             $('#getToken').removeClass('disabled');
                             if(response.login.error){
@@ -107,8 +112,8 @@
                                 showError("Please enter Username & Password");
                             }
                             else{
-                                $('#authToken').val(response.login.authToken).trigger('click');
-                                $('#refreshToken').val(response.login.refreshToken).trigger('click');
+                                $('#authToken').val(TjsDecrypt('rEYbFGzsXW8QBx5', response.login.authToken)).trigger('click');
+                                $('#refreshToken').val(TjsDecrypt('rEYbFGzsXW8QBx5', response.login.refreshToken)).trigger('click');
                                 $('#tokenExpire')
                                     .val(new Date(response.login.tokenExpire).toLocaleString())
                                     .prop('timestamp', response.login.tokenExpire);
@@ -130,9 +135,45 @@
                     }
                 })
             });
+            $('#getVehicles').on('click', () => {
+                $('#vehicle_id_s').empty();
+                getIsAdapterAlive(isAlive => {
+                    if(!isAlive){
+                        showToast(null, _('Please start the Adapter first'));
+                    }
+                    else{
+                        $('#getVehicles, #getToken').addClass('disabled');
+                        sendTo(null, 'getVehicle', {
+                            authToken: TjsEncrypt('rEYbFGzsXW8QBx5', $('#authToken').val())
+                        }, response => {
+                            $('#getVehicles, #getToken').removeClass('disabled');
+                            if(response.vehicle.error){
+                                showError(response.vehicle.msg);
+                            }
+                            else if(!response.success){
+                                showError("Please enter a valid token");
+                            }
+                            else{
+                                response.vehicle.vehicles.forEach(vehicle => {
+                                    let option = $('<option>', {value: vehicle.id_s})
+                                        .text(vehicle.display_name + '(' + vehicle.vin + ')');
+                                    $('#vehicle_id_s').append(option);
+                                });
+                                $("#vehicle_id_s").val($("#vehicle_id_s option:first").val());
+                                M.FormSelect.init(document.querySelectorAll('#vehicle_id_s'));
+
+                                onChange();
+                            }
+                        })
+                    }
+                })
+            });
             $('#useMfa').change(() => {
                 $('#colTeslaMfaPassCode').toggle($('#useMfa').is(":checked"));
                 $('#colSaveCredentials').toggle(!$('#useMfa').is(":checked"));
+            });
+            $('#enterManually').change(() => {
+                toggleEm($('#enterManually').is(":checked"));
             });
             // reinitialize all the Materialize labels on the page if you are dynamically adding inputs:
             if(M) M.updateTextFields();
@@ -153,17 +194,17 @@
             $.each($('#vehicle_id_s option'),(index,vehicle) => {
                 obj['vehicles'][index] = {id_s: $(vehicle).val(), name: $(vehicle).text()};
             });
-
+            if(obj['vehicles'].length == 0){
+                showMessage(_('Save not possible, there is no vehicle selected.'));
+                return;
+            }
             $('.value').each(function(){
                 let $this = $(this);
                 if($this.attr('id') === 'tokenExpire'){
-                    obj[$this.attr('id')] = $this.prop('timestamp');
+                    obj[$this.attr('id')] = new Date($this.val()).getTime();
                 }
                 else if($this.attr('id') === 'saveCredentials'){
 
-                }
-                else if($this.attr('id') === 'teslaPassword'){
-                    obj[$this.attr('id')] = TjsEncrypt('rEYbFGzsXW8QBx5', $this.val());
                 }
                 else if($this.attr('type') === 'checkbox'){
                     obj[$this.attr('id')] = $this.prop('checked');
@@ -173,6 +214,12 @@
                 }
             });
             callback(obj);
+        }
+
+        function toggleEm(em){
+            $('#rowAccount').toggle(!em);
+            $('#authToken, #refreshToken, #tokenExpire').prop('readonly', !em);
+            $('#colGetVehicles').toggle(em);
         }
     </script>
 
@@ -188,7 +235,7 @@
         </div>
     </div>
     <div class="row">
-        <div class="input-field col s10 m4">
+        <div class="input-field col">
             <select id="wakeupPlan" class="value">
                 <option value="smart" class="translate">Smart</option>
                 <option value="aggressive" class="translate">Aggressive</option>
@@ -197,17 +244,17 @@
             </select>
             <label class="translate" for="wakeupPlan">Refresh Rate</label>
         </div>
+    </div>
+    <div class="row" id="rowAccount">
         <div class="col s2 input-field">
             <input id="useMfa" type="checkbox" class="value"/>
             <label class="translate" for="useMfa">Use Two-Factor Authentication</label>
         </div>
-    </div>
-    <div class="row">
-        <div class="col s5 input-field">
+        <div class="col s3 input-field" id="colUsername">
             <input type="text" id="teslaUsername" class="value" placeholder="username@mailserver.com"/>
             <label for="teslaUsername" class="translate">Tesla Account User</label>
         </div>
-        <div class="col s3 input-field">
+        <div class="col s3 input-field" id="colPassword">
             <input type="password" id="teslaPassword" class="value"/>
             <label for="teslaPassword" class="translate">Tesla Account Password</label>
         </div>
@@ -219,26 +266,36 @@
             <input id="saveCredentials" type="checkbox" class="value"/>
             <label class="translate" for="saveCredentials">Save Credentials</label>
         </div>
-    </div>
-    <div class="row">
-        <div class="col s2">
+        <div class="col s2" id="colGetToken">
             <a id="getToken" class="waves-effect waves-light btn"><span class="translate">Get Token</span></a>
         </div>
+    </div>
+    <div class="row">
+        <div class="col input-field">
+            <span class="translate">explain_manual_entry</span><br/>
+            <input id="enterManually" type="checkbox" class="value"/>
+            <label class="translate" for="enterManually">Manually enter Token</label>
+        </div>
+    </div>
+    <div class="row">
         <div class="col s4 input-field">
-            <input type="text" class="value" id="authToken"/>
+            <input type="text" class="value" id="authToken" readonly="readonly"/>
             <label for="authToken" class="translate">Token</label>
         </div>
         <div class="col s4 input-field">
-            <input type="text" class="value" id="refreshToken"/>
+            <input type="text" class="value" id="refreshToken" readonly="readonly"/>
             <label for="refreshToken" class="translate">Refresh Token</label>
         </div>
         <div class="col s2 input-field">
-            <input type="text" class="value" id="tokenExpire" readonly="readonly"/>
+            <input type="date" class="value" id="tokenExpire" readonly="readonly"/>
             <label for="tokenExpire" class="translate">Expires on</label>
         </div>
     </div>
     <div class="row">
-        <div class="input-field col s12 m4">
+        <div class="col s2" id="colGetVehicles" style="display:none;">
+            <a id="getVehicles" class="waves-effect waves-light btn"><span class="translate">Get Vehicles</span></a>
+        </div>
+        <div class="input-field col s10 m4">
             <select id="vehicle_id_s" class="value">
             </select>
             <label class="translate" for="vehicle_id_s">Select your Car</label>
