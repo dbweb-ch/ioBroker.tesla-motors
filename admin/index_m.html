@@ -43,7 +43,12 @@
                     .text(vehicle.name);
                 $('#vehicle_id_s').append(option);
             });
-
+            if(settings["authToken"].length > 100){
+                settings["authToken"] = '';
+            }
+            if(settings["refreshToken"].length > 100){
+                settings["refreshToken"] = '';
+            }
             $('.value').each(function() {
                 let $key = $(this);
                 let id = $key.attr('id');
@@ -181,11 +186,6 @@
 
         // This will be called by the admin adapter when the user presses the save button
         function save(callback){
-            // Checkup
-            if($('#authToken').val().length < 64 || $('#refreshToken').val().length < 64){
-                showMessage(_('You have to get a Token before storing!'));
-                return;
-            }
             let obj = {};
             if(!$('#saveCredentials').prop('checked')){
                 $('#teslaUsername, #teslaPassword, #teslaMfaPassCode').val('');
@@ -208,6 +208,12 @@
                 }
                 else if($this.attr('type') === 'checkbox'){
                     obj[$this.attr('id')] = $this.prop('checked');
+                }
+                else if($this.attr('id') === 'authToken' && $this.val().length == 0){
+                    return;
+                }
+                else if($this.attr('id') === 'refreshToken' && $this.val().length == 0){
+                    return;
                 }
                 else{
                     obj[$this.attr('id')] = $this.val();
