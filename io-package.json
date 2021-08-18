@@ -1,8 +1,20 @@
 {
     "common": {
         "name": "tesla-motors",
-        "version": "0.5.4",
+        "version": "0.5.5",
         "news": {
+            "0.5.5": {
+                "en": "Enable manual token input",
+                "de": "Manuelle Token-Eingabe aktivieren",
+                "ru": "Включить ввод токена вручную",
+                "pt": "Habilitar entrada manual de token",
+                "nl": "Handmatige tokeninvoer inschakelen",
+                "fr": "Activer la saisie manuelle des jetons",
+                "it": "Abilita l'immissione manuale del token",
+                "es": "Habilitar la entrada de token manual",
+                "pl": "Włącz ręczne wprowadzanie tokena",
+                "zh-cn": "启用手动令牌输入"
+            },
             "0.5.3": {
                 "en": "Improved smart wakeup plan and wakeup more reliable on action request",
                 "de": "Verbesserter intelligenter Aufwachplan und zuverlässigeres Aufwachen auf Aktionsanforderung",
