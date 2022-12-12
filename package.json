@@ -27,7 +27,7 @@
     "chai": "^4.3.3",
     "gulp": "^4.0.0",
     "glob-parent": ">=5.1.2",
-    "mocha": "^9.0.3"
+    "mocha": "^10.2.0"
   },
   "main": "main.js",
   "scripts": {
